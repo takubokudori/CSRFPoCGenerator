@@ -3,6 +3,9 @@
 <html >
 	<head>
 		<meta charset="utf-8">
+		<meta name="author" content="takubokudori">
+		<meta name="description" content="Genrate CSRF PoC form">
+		<link rel="author" href="https://github.com/takubokudori" />
 		<title>PoC Generator</title>
 	</head>
 	<body>
@@ -11,11 +14,6 @@
 				if(typeof str !== 'string') return str;
 				return encodeURIComponent(str.replace(/\r?\n/g,"\r\n"));
 			}
-function PercentEncodeWithoutPercent(str){
-	if(typeof str !== 'string') return str;
-	var dummypercent="gjahedfjgurihwfr3u31894ur93";
-	return URLencode(str.replace(/%/g,dummypercent)).replace(/gjahedfjgurihwfr3u31894ur93/g,'%');
-}
 function URLdecode(str){
 	if(typeof str !== 'string') return str;
 	return decodeURIComponent(str.replace(/\+/g,'%20'));
@@ -23,8 +21,10 @@ function URLdecode(str){
 
 function escapeHTML(string) {
 	if(typeof string !== 'string') return string;
-	return string.replace(/[&'`"<>]/g, function(match) {
+	return string.replace(/[&'`"<>\n\r]/g, function(match) {
 		return {
+			'\r': '&#x0D',
+			'\n': '&#x0A',
 			'&': '&amp;',
 			"'": '&#x27;',
 			'`': '&#x60;',
@@ -43,7 +43,6 @@ function PostMessage(isSubmit){
 	var form=document.forms.messageForm;
 	var ez=document.getElementById("evilzone");
 	var ezhtml="";
-	var ezhtmlshadow="";
 	var url=form.url.value;
 	if(url == ""){
 		errorMsg("URL is empty!");
@@ -59,49 +58,96 @@ function PostMessage(isSubmit){
 		errorMsg("params is empty!");
 		return;
 	}
-	// params=PercentEncodeWithoutPercent(params);
+	var enctype=form.enctype.value;
 	var param=params.split("&");
-	ezhtml+='<form target="dummyfrm" name="evilform" action="' + url + '" method="' + method + '">\n';
-	ezhtmlshadow+='<form target="dummyfrm" name="evilform" action="' + url + '" method="' + method + '">\n';
+	ezhtml+='<form target="dummyfrm" name="evilform" action="' + url + '" method="' + method + '" enctype="'+ enctype +'">\n';
 	for(var i in param){
 		var t=param[i].split("=");
-		ezhtml+='<input type="hidden" name="'+URLdecode(t[0])+'" value="'+escapeHTML(URLdecode(t[1]))+'" />\n';
-		ezhtmlshadow+='<input type="hidden" name="'+escapeHTML(escapeHTML(URLdecode(t[0])))+'" value="'+escapeHTML(escapeHTML(URLdecode(t[1])))+'" />\n';
+		ezhtml+='<input type="hidden" name="'+escapeHTML(URLdecode(t[0]))+'" value="'+escapeHTML(URLdecode(t[1]))+'" />\n';
 	}
 	ezhtml+='</form>\n';
-	ezhtmlshadow+='</form>\n';
 	ezhtml+='<iframe src="x" width="1" height="1" name="dummyfrm" style="visibility:hidden"></iframe>';
-	ezhtmlshadow+='<iframe src="x" width="1" height="1" name="dummyfrm" style="visibility:hidden"></iframe>';
 	ez.innerHTML=ezhtml;
 
 	document.getElementById("nowhtml").innerText=ezhtml;
 	errorMsg(""); // clear erro message
 	if(isSubmit){
-		document.getElementById("stat").innerHTML+="<p>Request sent.</p><p>"+url+"</p><p>"+params+"</p><hr />";
+		document.getElementById("stat").innerHTML+="<p>Request sent.</p><p>"+escapeHTML(url)+"</p><p>"+escapeHTML(params)+"</p><hr />";
 		var submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
 		submit();
 	}
 }
 
+function downloadHTML(){
+	var nh=document.getElementById("nowhtml");
+	if(nh.innerText==""){
+		errorMsg("No downloadable HTML! generate form!");
+		return;
+	}
+	var title=document.messageForm.title.value;
+	content='<!DOCTYPE html>\n\n';
+	content+='<html>\n';
+	content+='<head>\n';
+	content+='<meta charset="utf-8">\n';
+	content+='<title>'+title+'</title>\n';
+	content+='</head>\n';
+	content+='<body onload="document.evilform.submit();">\n';
+	content+=nh.innerText;
+	content+='\n<p>'+title+'</p>\n';
+	content+='</body>\n';
+	content+='</html>\n';
+
+	var mimeType='text/plain';
+	var name="poc.html";
+
+	var blob = new Blob([content], {type : mimeType});
+
+	var a = document.createElement('a');
+	a.download = name;
+	a.target   = '_blank';
+	if (window.navigator.msSaveBlob) {
+		window.navigator.msSaveBlob(blob, name)
+	}
+	else if (window.URL && window.URL.createObjectURL) {
+		a.href = window.URL.createObjectURL(blob);
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+	}
+	else if (window.webkitURL && window.webkitURL.createObject) {
+		a.href = window.webkitURL.createObjectURL(blob);
+		a.click();
+	}
+	else {
+		window.open('data:' + mimeType + ';base64,' + window.Base64.encode(content), '_blank');
+	}
+}
 		</script>
-		<h1>PoCGenerator v1.0</h1>
+		<h1>PoCGenerator v1.1</h1>
 
 		<div>
 			URLencode:<textarea id="uea" name="urlencodearea" rows="1" cols="60"></textarea>
-			<button name="encodeIT" onclick="document.getElementById('uea').value=URLencode(document.getElementById('uea').value);return false;" >URLencode</button>
+			<button name="encodeIT" onclick="document.getElementById('uea').value=URLencode(document.getElementById('uea').value);return false;" >URL encode</button>
 		</div>
 		<hr>
 
 
 		<span id="errormsg"></span>
 
-		<form action="" name="messageForm">
-			URL:<input type="text" name="url" size="100" /> <br />
-			method:<input type="text" name="method" size="8" value="POST" /></br />
+		<form name="messageForm">
+			URL:<input type="text" name="url" size="50" /> <br />
+			method: <input type="text" name="method" size="8" value="POST" /><br />
+			enctype: <select name="enctype">
+				<option value="application/x-www-form-urlencoded" selected>application/x-www-form-urlencoded (default)</option>
+				<option value="multipart/form-data">multipart/form-data</option>
+				<option value="text/plain">text/plain</option>
+			</select><br />
 			params:<br />
 			<textarea name="params" rows="6" cols="60" ></textarea><br />
-			<button name="postmessage" onclick="PostMessage(true);return false;" >create and submit</button>
-			<button name="postmessage" onclick="PostMessage(false);return false;" >create only</button>
+			<button name="postmessage" onclick="PostMessage(true);return false;" >generate and submit</button>
+			<button name="postmessage" onclick="PostMessage(false);return false;" >generate only</button><br />
+			title:<input type="text" name="title" size="20" value="CSRF PoC" />
+			<button name="downloadhtml" onclick="PostMessage(false);downloadHTML();return false;" >download HTML</button>
 		</form>
 		<div id="evilzone"></div>
 		<hr />
@@ -109,4 +155,4 @@ function PostMessage(isSubmit){
 		<hr />
 		<p id="stat"></p>
 	</body>
-</html>
+	</html>
