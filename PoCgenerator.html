@@ -9,13 +9,18 @@
 		<title>PoC Generator</title>
 	</head>
 	<body>
+<style>
+.hide{
+	visibility:hidden;
+}
+</style>
 		<script>
 			var form;
 
 var formfunc={
 	generate : function(){
 		var ezhtml="";
-		var req=getSet();
+		var req=getRequest();
 		if(req===false)return;
 		ezhtml+='<form target="dummyfrm" name="evilform" action="' + req['url'] + '" method="' + req['method'] + '" enctype="'+ req['enctype'] +'">\n';
 		var params=req['params'];
@@ -41,7 +46,7 @@ var formfunc={
 	},
 
 	send : function(){
-		var req=getSet();
+		var req=getRequest();
 		document.getElementById("stat").innerHTML+="<p>Request sent.</p><p>"+escapeHTML(req['url'])+"</p><p>"+escapeHTML(req['params'])+"</p><hr />";
 		var submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
 		submit();
@@ -51,13 +56,16 @@ var formfunc={
 
 var xhrfunc={
 	generate : function(){
-		var req=getSet();
+		var req=getRequest();
 		if(req===false)return;
 		var ezhtml="";
 		ezhtml+="function csrfXHR(){\n";
 		ezhtml+="var xhr=new XMLHttpRequest();\n";
 		ezhtml+="xhr.open('" + req['method'] + "','" + req['url'] + "');\n";
-		ezhtml+="xhr.setRequestHeader('Content-Type','"+req['enctype']+"');\n";
+		ezhtml+="xhr.withCredentials = true;\n";
+		ezhtml+="xhr.setRequestHeader('Content-Type','"+req['enctype']+";'";
+		if(req['enctype']=="multipart/form-data")ezhtml+="+' boundary="+req['boundary']+"'";
+		ezhtml+=");\n";
 		ezhtml+="xhr.send('"+escapeJavascriptCRLF(getParamsRaw())+"');\n";
 		ezhtml+="}\n";
 		setEvilTextContent(ezhtml,true);
@@ -152,10 +160,23 @@ function triggerFunc(){
 	eval('func='+sm+';');
 }
 
+function triggerEnctype(){
+	var enctype=form.enctype.value;
+	if(enctype=="multipart/form-data"){
+		document.getElementById("div-boundary").style.visibility="visible";
+	}else{
+		document.getElementById("div-boundary").style.visibility="hidden";
+	}
+	if(enctype=="other"){
+		document.getElementById("span-enctypeother").style.visibility="visible";
+	}else{
+		document.getElementById("span-enctypeother").style.visibility="hidden";
+	}
+}
 function generatePoC(){
 	func.generate();
 }
-function getSet(){
+function getRequest(){
 	var url=getURL();
 	if(url==""){
 		errorMsg("URL is empty!");
@@ -176,11 +197,13 @@ function getSet(){
 		errorMsg("params is empty!");
 		return false;
 	}
+	var boundary=form.boundary.value;
 	return {
 		'url':url,
 		'method':method,
 		'enctype':enctype,
-		'params':params
+		'params':params,
+		'boundary':boundary
 	};
 }
 function getURL(){
@@ -192,7 +215,9 @@ function getMethod(){
 }
 
 function getEnctype(){
-	return form.enctype.value;
+	var et=form.enctype.value;
+	if(et=="other") return form.enctypeother.value;
+	return et;
 }
 
 function getParamsRaw(){
@@ -284,22 +309,24 @@ function downloadHTML(){
 		<span id="errormsg"></span>
 
 		<form name="messageForm">
-			send :
+			<div>send :
 			<input type="radio" name="sendmethod" id="use form" value="formfunc" onclick="triggerFunc()" checked><label for="use form">Form</label>
-			<input type="radio" name="sendmethod" id="use xhr" value="xhrfunc" onclick="triggerFunc()"><label for="use xhr">XHR</label> <br />
-			URL:<input type="text" name="url" size="50" /> <br />
-			method: <input type="text" name="method" size="8" value="POST" /><br />
-			enctype: <select name="enctype">
+			<input type="radio" name="sendmethod" id="use xhr" value="xhrfunc" onclick="triggerFunc()"><label for="use xhr">XHR</label></div>
+			<div>URL:<input type="text" name="url" size="50" /></div>
+			<div>method: <input type="text" name="method" size="8" value="POST" /></div>
+			<div>enctype: <select name="enctype" onchange="triggerEnctype()">
 				<option value="application/x-www-form-urlencoded" selected>application/x-www-form-urlencoded (default)</option>
 				<option value="multipart/form-data">multipart/form-data</option>
 				<option value="text/plain">text/plain</option>
-			</select><br />
-			params:<br />
+				<option value="other">other</option>
+				</select><span class="hide" id="span-enctypeother">other:<input type="text" name="enctypeother" size="20" value="" /></span></div>
+				<div class="hide" id="div-boundary">boundary: <input type="text" name="boundary" size="20" value="" /></div>
+				<div>params:<br />
 			<textarea name="params" rows="6" cols="60" ></textarea><br />
 			<button name="generate" onclick="generatePoC();sendPoC();return false;" >generate and submit</button>
-			<button name="generate" onclick="generatePoC();return false;" >generate only</button><br />
-			title:<input type="text" name="title" size="20" value="CSRF PoC" />
-			<button name="downloadhtml" onclick="generatePoC();downloadHTML();return false;" >download HTML</button>
+			<button name="generate" onclick="generatePoC();return false;" >generate only</button></div>
+				<div>title:<input type="text" name="title" size="20" value="CSRF PoC" />
+					<button name="downloadhtml" onclick="generatePoC();downloadHTML();return false;" >download HTML</button></div>
 		</form>
 		<div id="evilzone" style="visibility:hidden"></div>
 		<hr />
