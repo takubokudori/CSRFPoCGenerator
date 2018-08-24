@@ -1,5 +1,5 @@
 # CSRFPoCGenerator
-generate CSRF PoC Form
+generate CSRF PoC
 
 ---
 
@@ -94,3 +94,18 @@ Then click "URL encode" and encode input string.
 ```
 %3Cscript%3Ealert(1)%3B%3C%2Fscript%3E
 ```
+
+---
+
+# Change log
+
+v1.2
+
+- added XHR mode
+
+v1.1
+
+- added enctype setting
+- added download function
+- fixed typo
+
