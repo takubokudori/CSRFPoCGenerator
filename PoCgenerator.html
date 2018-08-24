@@ -230,7 +230,8 @@ function getHTMLheader(title="CSRF PoC"){
 }
 
 function getHTMLfooter(){
-	content+='</html>\n';
+	var content='</html>\n';
+	return content;
 }
 
 function generateXHRHTML(title,bodyhtml){
@@ -244,12 +245,13 @@ function generateXHRHTML(title,bodyhtml){
 }
 
 function generateFormHTML(title,bodyhtml){
-	content+=getHTMLheader(title);
+	var content=getHTMLheader(title);
 	content+='<body onload="document.evilform.submit();">\n';
 	content+=bodyhtml;
 	content+='\n<p>'+title+'</p>\n';
 	content+='</body>\n';
 	content+=getHTMLfooter();
+	return content;
 }
 
 function downloadHTML(){
@@ -304,7 +306,7 @@ function downloadHTML(){
 			title:<input type="text" name="title" size="20" value="CSRF PoC" />
 			<button name="downloadhtml" onclick="generatePoC();downloadHTML();return false;" >download HTML</button>
 		</form>
-		<div id="evilzone"></div>
+		<div id="evilzone" style="visibility:hidden"></div>
 		<hr />
 		<div id="nowhtml"></div>
 		<hr />
