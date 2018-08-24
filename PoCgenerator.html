@@ -220,6 +220,22 @@ function getEnctype(){
 	return et;
 }
 
+function detectBoundary(){
+	var pm=getParamsRaw();
+	pm=pm.split(/\r\n|\n/);
+
+	var k;
+	for(var i = pm.length-1;i>=0;i--){
+		k=pm[i].match(/^--[0-9a-zA-Z-]+--$/g);
+		if(k!=null&&k.length===1){
+			var z=k[0].slice(2,k.length-3);
+			form.boundary.value=z;
+			return;
+		}
+	}
+	errorMsg("failed to detect boundary!Is params perfect format?");
+	return;
+}
 function getParamsRaw(){
 	return form.params.value;
 }
@@ -310,17 +326,17 @@ function downloadHTML(){
 
 		<form name="messageForm">
 			<div>send :
-			<input type="radio" name="sendmethod" id="use form" value="formfunc" onclick="triggerFunc()" checked><label for="use form">Form</label>
-			<input type="radio" name="sendmethod" id="use xhr" value="xhrfunc" onclick="triggerFunc()"><label for="use xhr">XHR</label></div>
+			<input type="radio" name="sendmethod" id="use form" value="formfunc" onclick="triggerFunc();" checked><label for="use form">Form</label>
+			<input type="radio" name="sendmethod" id="use xhr" value="xhrfunc" onclick="triggerFunc();"><label for="use xhr">XHR</label></div>
 			<div>URL:<input type="text" name="url" size="50" /></div>
 			<div>method: <input type="text" name="method" size="8" value="POST" /></div>
-			<div>enctype: <select name="enctype" onchange="triggerEnctype()">
+			<div>enctype: <select name="enctype" onchange="triggerEnctype();">
 				<option value="application/x-www-form-urlencoded" selected>application/x-www-form-urlencoded (default)</option>
 				<option value="multipart/form-data">multipart/form-data</option>
 				<option value="text/plain">text/plain</option>
 				<option value="other">other</option>
 				</select><span class="hide" id="span-enctypeother">other:<input type="text" name="enctypeother" size="20" value="" /></span></div>
-				<div class="hide" id="div-boundary">boundary: <input type="text" name="boundary" size="20" value="" /></div>
+				<div class="hide" id="div-boundary">boundary: <input type="text" name="boundary" size="20" value="" /><button onclick="detectBoundary();return false;">detect boundary</button></div>
 				<div>params:<br />
 			<textarea name="params" rows="6" cols="60" ></textarea><br />
 			<button name="generate" onclick="generatePoC();sendPoC();return false;" >generate and submit</button>
