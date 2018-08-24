@@ -37,8 +37,19 @@ var formfunc={
 
 	generateHTML : function(title,bodyhtml){
 		var content=getHTMLheader(title);
-		content+='<body onload="document.evilform.submit();">\n';
+		content+='<body';
+		if(isAutoSubmit()) content+=' onload="document.evilform.submit();"';
+		content+='>\n';
 		content+=bodyhtml;
+		if(!isAutoSubmit()){
+			content+='<button onclick="csrfSubmit();">submit</button>\n';
+			content+='<sc'+'ript>\n';
+			content+='function csrfSubmit(){\n';
+			content+='var submit = HTMLFormElement.prototype["submit"].bind(document.evilform);\n';
+			content+='submit();\n';
+			content+='}\n';
+			content+='</sc'+'ript>\n';
+		}
 		content+='\n<p>'+title+'</p>\n';
 		content+='</body>\n';
 		content+=getHTMLfooter();
@@ -74,8 +85,11 @@ var xhrfunc={
 
 	generateHTML : function(title,bodyhtml){
 		var content=getHTMLheader(title);
-		content+='<body onload="csrfXHR();">\n';
+		content+='<body';
+		if(isAutoSubmit()) content+=' onload="csrfXHR();"';
+		content+='>\n';
 		content+=bodyhtml;
+		if(!isAutoSubmit()) content+='<button onclick="csrfXHR();">submit</button>\n';
 		content+='\n<p>'+title+'</p>\n';
 		content+='</body>\n';
 		content+=getHTMLfooter();
@@ -220,6 +234,9 @@ function getEnctype(){
 	return et;
 }
 
+function isAutoSubmit(){
+	return form.autosubmit.checked;
+}
 function detectBoundary(){
 	var pm=getParamsRaw();
 	pm=pm.split(/\r\n|\n/);
@@ -313,7 +330,7 @@ function downloadHTML(){
 	executeDownload(name,content,mimeType);
 }
 		</script>
-		<h1>PoCGenerator v1.2</h1>
+		<h1>PoCGenerator v1.3</h1>
 
 		<div>
 			URLencode:<textarea id="uea" name="urlencodearea" rows="1" cols="60"></textarea>
@@ -328,6 +345,7 @@ function downloadHTML(){
 			<div>send :
 			<input type="radio" name="sendmethod" id="use form" value="formfunc" onclick="triggerFunc();" checked><label for="use form">Form</label>
 			<input type="radio" name="sendmethod" id="use xhr" value="xhrfunc" onclick="triggerFunc();"><label for="use xhr">XHR</label></div>
+			<div>automatic submitting:<input type="checkbox" name="autosubmit" value="autosubmit" checked /></div>
 			<div>URL:<input type="text" name="url" size="50" /></div>
 			<div>method: <input type="text" name="method" size="8" value="POST" /></div>
 			<div>enctype: <select name="enctype" onchange="triggerEnctype();">

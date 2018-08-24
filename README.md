@@ -99,6 +99,12 @@ Then click "URL encode" and encode input string.
 
 # Change log
 
+v1.3
+
+- added XHR multipart/form-data transmission
+- added an option to send automatinally
+- arvitrary enctype
+
 v1.2
 
 - added XHR mode
