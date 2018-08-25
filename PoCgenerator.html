@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html >
+<html>
 	<head>
 		<meta charset="utf-8">
 		<meta name="author" content="takubokudori">
@@ -21,11 +21,11 @@ var formfunc={
 	generate : function(){
 		var ezhtml="";
 		var req=getRequest();
-		if(req===false)return;
+		if(req===false)return false;
 		ezhtml+='<form target="dummyfrm" name="evilform" action="' + req['url'] + '" method="' + req['method'] + '" enctype="'+ req['enctype'] +'">\n';
 		var params=req['params'];
 		for(var i in params){
-			ezhtml+='<input type="hidden" name="'+escapeHTML(URLdecode(params[i][0]))+'" value="'+escapeHTML(URLdecode(params[i][1]))+'" />\n';
+			ezhtml+='<input type="'+((!isAutoSubmit()&&isSpecifiable())?("text"):("hidden"))+'" name="'+escapeHTML(URLdecode(params[i][0]))+'" value="'+escapeHTML(URLdecode(params[i][1]))+'" />\n';
 		}
 		ezhtml+='</form>\n';
 		ezhtml+='<iframe src="x" width="1" height="1" name="dummyfrm" style="visibility:hidden"></iframe>';
@@ -33,6 +33,7 @@ var formfunc={
 
 		setEvilTextContent(ezhtml);
 		errorMsg("");
+		return true;
 	},
 
 	generateHTML : function(title,bodyhtml){
@@ -68,7 +69,7 @@ var formfunc={
 var xhrfunc={
 	generate : function(){
 		var req=getRequest();
-		if(req===false)return;
+		if(req===false)return false;
 		var ezhtml="";
 		ezhtml+="function csrfXHR(){\n";
 		ezhtml+="var xhr=new XMLHttpRequest();\n";
@@ -81,6 +82,7 @@ var xhrfunc={
 		ezhtml+="}\n";
 		setEvilTextContent(ezhtml,true);
 		setEvilHTMLcontent(ezhtml);
+		return true;
 	},
 
 	generateHTML : function(title,bodyhtml){
@@ -161,17 +163,26 @@ function errorMsg(msg){
 
 function setEvilHTMLcontent(ezhtml){
 	document.getElementById("evilzone").innerHTML=ezhtml;
-
 }
 
 function setEvilTextContent(ezhtml,isScript=false){
 	if(isScript) ezhtml="<"+"script>\n"+ezhtml+"</"+"script>\n";
-	document.getElementById("nowhtml").textContent=ezhtml;
+	document.getElementById("nowhtml").innerText=ezhtml;
 }
 
 function triggerFunc(){
 	var sm=form.sendmethod.value;
 	eval('func='+sm+';');
+}
+
+
+function triggerAuto(){
+	var as=form.autosubmit.checked;
+	if(as){
+		document.getElementById("div-specifiable").style.visibility="hidden";
+	}else{
+		document.getElementById("div-specifiable").style.visibility="visible";
+	}
 }
 
 function triggerEnctype(){
@@ -187,8 +198,9 @@ function triggerEnctype(){
 		document.getElementById("span-enctypeother").style.visibility="hidden";
 	}
 }
-function generatePoC(){
-	func.generate();
+function generatePoC(isSubmit){
+	var success=func.generate();
+	if(success&&isSubmit)func.send();
 }
 function getRequest(){
 	var url=getURL();
@@ -236,6 +248,10 @@ function getEnctype(){
 
 function isAutoSubmit(){
 	return form.autosubmit.checked;
+}
+
+function isSpecifiable(){
+	return form.specifiable.checked;
 }
 function detectBoundary(){
 	var pm=getParamsRaw();
@@ -339,30 +355,32 @@ function downloadHTML(){
 		<hr>
 
 
-		<span id="errormsg"></span>
+		<span id="errormsg" style="color:red;"></span>
 
 		<form name="messageForm">
 			<div>send :
-			<input type="radio" name="sendmethod" id="use form" value="formfunc" onclick="triggerFunc();" checked><label for="use form">Form</label>
-			<input type="radio" name="sendmethod" id="use xhr" value="xhrfunc" onclick="triggerFunc();"><label for="use xhr">XHR</label></div>
-			<div>automatic submitting:<input type="checkbox" name="autosubmit" value="autosubmit" checked /></div>
+			<input type="radio" name="sendmethod" id="form-method" value="formfunc" onclick="triggerFunc();" checked><label for="form-method">Form</label>
+			<input type="radio" name="sendmethod" id="xhr-method" value="xhrfunc" onclick="triggerFunc();"><label for="xhr-method">XHR</label></div>
+			<div>automatic submitting:<input type="checkbox" name="autosubmit" value="autosubmit" onclick="triggerAuto();return true;" checked /></div>
+			<div class="hide" id="div-specifiable">specifiable:<input type="checkbox" name="specifiable" value="supecifiable" /></div>
 			<div>URL:<input type="text" name="url" size="50" /></div>
 			<div>method: <input type="text" name="method" size="8" value="POST" /></div>
 			<div>enctype: <select name="enctype" onchange="triggerEnctype();">
 				<option value="application/x-www-form-urlencoded" selected>application/x-www-form-urlencoded (default)</option>
 				<option value="multipart/form-data">multipart/form-data</option>
+				<option value="application/json">application/json</option>
 				<option value="text/plain">text/plain</option>
 				<option value="other">other</option>
 				</select><span class="hide" id="span-enctypeother">other:<input type="text" name="enctypeother" size="20" value="" /></span></div>
 				<div class="hide" id="div-boundary">boundary: <input type="text" name="boundary" size="20" value="" /><button onclick="detectBoundary();return false;">detect boundary</button></div>
 				<div>params:<br />
 			<textarea name="params" rows="6" cols="60" ></textarea><br />
-			<button name="generate" onclick="generatePoC();sendPoC();return false;" >generate and submit</button>
-			<button name="generate" onclick="generatePoC();return false;" >generate only</button></div>
+			<button name="generate" onclick="generatePoC(true);return false;" >generate and submit</button>
+			<button name="generate" onclick="generatePoC(false);return false;" >generate only</button></div>
 				<div>title:<input type="text" name="title" size="20" value="CSRF PoC" />
 					<button name="downloadhtml" onclick="generatePoC();downloadHTML();return false;" >download HTML</button></div>
 		</form>
-		<div id="evilzone" style="visibility:hidden"></div>
+		<div id="evilzone" style="visibility:hidden;display:none;"></div>
 		<hr />
 		<div id="nowhtml"></div>
 		<hr />
