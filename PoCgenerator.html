@@ -15,6 +15,165 @@
     }
 </style>
 <script>
+    class HTTPRequest {
+        /*
+        rawLine_;
+        rawHeader_;
+        rawBody_;
+        line_;
+        header_;
+        body_;
+        httpRequest_;
+        success_;
+        */
+        static separate_(str, delimiter) {
+            if (typeof str !== 'string' || typeof delimiter !== 'string') return str;
+            const idx = str.indexOf(delimiter);
+            return [str.substring(0, idx), str.slice(idx + delimiter.length)];
+        }
+
+        constructor(httpRequest) {
+            this.success_=false;
+            this.analyzeHTTPRequest(httpRequest);
+        }
+
+        analyzeHTTPRequest(httpRequest) {
+            this.success_=false;
+            this.httpRequest_ = httpRequest;
+            httpRequest = httpRequest.replace(/\r?\n/g, "\r\n");
+            const http = HTTPRequest.separate_(httpRequest, "\r\n\r\n");
+            const httpHeader = HTTPRequest.separate_(http[0], "\r\n");
+            const rawLine=httpHeader[0];
+            const rawHeader=httpHeader[1];
+            const rawBody = http[1];
+            const httpLine=this.analyzeLine(httpHeader[0]);
+            if(httpLine===false) return false;
+            let httpHeader = this.analyzeHeader(httpHeader[1]);
+            if (httpHeader === false) return false;
+            let httpBody = this.analyzeHTTPBody(http[1], httpHeader['headers']['Content-Type']);
+            if (httpBody === false) return false;
+
+            this.rawLine_ = rawLine;
+            this.rawHeader_ = rawHeader;
+            this.rawBody_ = rawBody;
+            this.line_ = httpLine;
+            this.header_ = httpHeader;
+            this.body_ = httpBody;
+            this.success_=true;
+        }
+
+        analyzeLine(line) {
+            const q = line.split(' ');
+            if (q.length !== 3) return false;
+            const method = q[0];
+            const url = q[1];
+            const version = q[2];
+
+            return {
+                'method': method,
+                'url': url,
+                'version': version
+            };
+        }
+
+        analyzeHeaderOption(headerValue){
+            let v=headerValue.split(';');
+            const ret=[];
+            for(const i in v){
+                let k=v[i].split('=');
+                if(k.length===1) ret.push(k[0]); // string
+                else ret.push(k); // array
+            }
+            return ret;
+        }
+
+        analyzeHeader(headers) {
+            headers = headers.split(/\r\n|\n/);
+            const ret = {
+                'custom': [], // custom headers
+            };
+            for (const i in headers) {
+                const h = headers[i].split(':');
+                if (h.length === 2) {
+                    h[0] = h[0].trim(); // header name
+                    h[1] = h[1].trim(); // value
+                    if (!forbiddenHeader[h[0]]) ret['custom'].push(h); // custom header
+                    else { // forbidden header
+                        ret[h[0]]=this.analyzeHeaderOption(h[1]);
+                    }
+                }
+            }
+            return ret;
+        }
+
+        analyzeHTTPHeader(httpHeader) {
+            httpHeader = HTTPRequest.separate_(httpHeader, "\r\n");
+            /* httpHeader[0]->requestLine, httpHeader[1]->header */
+            const line = this.analyzeLine(httpHeader[0]);
+            if (line === false) return false;
+            const headers = this.analyzeHeader(httpHeader[1]);
+            if (headers === false) return false;
+            return {
+                'line': line,
+                'headers': headers,
+            };
+        }
+
+        analyzeHTTPBody(httpbody, contentType) {
+            let ret;
+            if (contentType === "multipart/form-data") {
+                let boundary = "";
+                const c = contentType.split(';');
+                let k;
+                for (const i in c) {
+                    k = c.split('=');
+                    if (k.length === 2) {
+                        if (k[0].trim() === 'boundary') {
+                            boundary = k[1];
+                            break;
+                        }
+                    }
+                }
+                ret = analyzeMultipartParams(httpbody, boundary);
+            } else {
+                ret = analyzeParams(httpbody);
+            }
+            return ret;
+        }
+
+        get rawHeader() {
+            return this.rawHeader_;
+        }
+
+        get rawBody() {
+            return this.rawBody_;
+        }
+
+        get rawLine() {
+            return this.rawLine_;
+        }
+
+        get header() {
+            return this.header_;
+        }
+
+        get body() {
+            return this.body_;
+        }
+
+        get line() {
+            return this.line_;
+        }
+
+        get httpRequest() {
+            return this.httpRequest_;
+        }
+
+        get success(){
+            return this.success_;
+        }
+    }
+
     let form;
 
     if (!String.prototype.trim) { // for IE <9
@@ -139,7 +298,7 @@
     window.onload = function () {
         form = document.forms.messageForm;
         func = formfunc;
-    }
+    };
 
     /**
      * @return {string}
@@ -196,7 +355,7 @@
     }
 
     function errorMsg(msg) {
-        if (typeof msg === 'string') return msg;
+        if (typeof msg !== 'string') return msg;
         document.getElementById("errormsg").textContent = msg;
     }
 
@@ -309,7 +468,7 @@
             }
         }
         errorMsg("failed to detect boundary!Is params perfect format?");
-        
+
     }
 
     function getParamsRaw() {
@@ -328,29 +487,6 @@
         return dict;
     }
 
-    /*
-    POST http://example.com/ HTTP/1.1
-    */
-    function analyzeRequestURL(row) {
-        const q = row.split(' ');
-        if (q.length !== 3) return false;
-        const method = q[0];
-        const url = q[1];
-        const version = q[2];
-
-        return {
-            'method': method,
-            'url': url,
-            'version': version
-        };
-    }
-
-    /*
-    Host: localhost
-    X-Forwarded-For: 127.0.0.1
-    Referer: http://example.com/
-    */
-
     function getHeaderOptionParams(headerValue) {
         // aaa; test=example; charset=UTF-8
         let a = headerValue.split(';');
@@ -361,27 +497,6 @@
             a = a[i];
         }
         return arr;
-    }
-
-    function analyzeHeaders(headers) {
-        headers = headers.split(/\r\n|\n/);
-        const ret = {
-            'custom': [], // custom headers
-        };
-        for (const i in headers) {
-            const h = headers[i].split(':');
-            if (h.length === 2) {
-                h[0] = h[0].trim(); // header name
-                h[1] = h[1].trim(); // value
-                if (!forbiddenHeader[h[0]]) ret['custom'].push(h); // custom header
-                else { // forbidden header
-                    if (h[0] === 'Cookie') ret[h[0]] = h[1];
-                    else {
-                    }
-                }
-            }
-        }
-        return ret;
     }
 
     function analyzeMultipartParams(params, boundary) {
@@ -406,83 +521,28 @@
         func.send();
     }
 
-    function separate(str, delimiter) {
-        const idx = str.indexOf(delimiter);
-        return [str.substring(0, idx), str.slice(idx + delimiter.length)];
-    }
-
-    function analyzeHTTPHeader(httpHeader) {
-        var idx = httpHeader.indexOf("\r\n");
-        var request = httpHeader.substring(0, idx);
-        var header = httpHeader.slice(idx + 2);
-        var headersRaw = header;
-        var req = analyzeRequestURL(request);
-        if (req === false) return false;
-        const headers = analyzeHeaders(header);
-        if (headers === false) return false;
-        return {
-            'url': req['url'],
-            'method': req['method'],
-            'version': req['version'],
-            'headers': headers,
-            'headersRaw': headersRaw
-        };
-    }
-
-    function analyzeHTTPBody(httpbody, contentType) {
-        let ret;
-        if (contentType === "multipart/form-data") {
-            let boundary = "";
-            const c = contentType.split(';');
-            let k;
-            for (const i in c) {
-                k = c.split('=');
-                if (k.length === 2) {
-                    if (k[0].trim() === 'boundary') {
-                        boundary = k[1];
-                        break;
-                    }
-                }
-            }
-            ret = analyzeMultipartParams(httpbody, boundary);
-        } else {
-            ret = analyzeParams(httpbody);
-        }
-        return ret;
-    }
-
-    function analyzeHTTPRequest(httpRequest) {
-        httpRequest = httpRequest.replace(/\r?\n/g, "\r\n");
-        var idx = httpRequest.indexOf("\r\n\r\n");
-        var httpHeader = httpRequest.substring(0, idx);
-        var httpBody = httpRequest.slice(idx + 4);
-        var httpBodyRaw = httpBody;
-        httpHeader = analyzeHTTPHeader(httpHeader);
-        if (httpHeader === false) return false;
-        httpBody = analyzeHTTPBody(httpBody, httpHeader['headers']['Content-Type']);
-        if (httpBody === false) return false;
-
-        return {
-            'header': httpHeader, // dictionary
-            'body': httpBody, // array
-            'bodyRaw': httpBodyRaw // string
-        };
-    }
-
     function analyzeRequest() {
-        let a = form.httprequest.value;
-        a = analyzeHTTPRequest(a);
-        form.url.value = a['header']['url'];
-        form.method.value = a['header']['method'];
-        if (typeof a['header']['headers']['Content-Type'] !== 'undefined') form.enctype.value = a['header']['headers']['Content-Type'];
-        form.params.value = a['bodyRaw'];
-        form.headers.value = a['header']['headersRaw'];
+        const req=form.httprequest.value;
+        if(req===""){
+            errorMsg("Raw HTTP request is empty!");
+            return;
+        }
+        let a = new HTTPRequest(req);
+        if(!a.success){
+            errorMsg("failed to parse HTTP request!");
+            return;
+        }
+        form.url.value = a.line['url'];
+        form.method.value = a.line['method'];
+        if (typeof a.header['Content-Type'] !== 'undefined') form.enctype.value = a.header['Content-Type'][0];
+        form.params.value = a.rawBody;
+        form.headers.value = a.header;
     }
 
     function executeDownload(name, content, mimeType) {
-        var blob = new Blob([content], {type: mimeType});
+        const blob = new Blob([content], {type: mimeType});
 
-        var a = document.createElement('a');
+        const a = document.createElement('a');
         a.download = name;
         a.target = '_blank';
         if (window.navigator.msSaveBlob) {
