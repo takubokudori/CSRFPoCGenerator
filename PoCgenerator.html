@@ -42,13 +42,13 @@
             this.httpRequest_ = httpRequest;
             httpRequest = httpRequest.replace(/\r?\n/g, "\r\n");
             const http = HTTPRequest.separate_(httpRequest, "\r\n\r\n");
-            const httpHeader = HTTPRequest.separate_(http[0], "\r\n");
+            let httpHeader = HTTPRequest.separate_(http[0], "\r\n");
             const rawLine=httpHeader[0];
             const rawHeader=httpHeader[1];
             const rawBody = http[1];
             const httpLine=this.analyzeLine(httpHeader[0]);
             if(httpLine===false) return false;
-            let httpHeader = this.analyzeHeader(httpHeader[1]);
+            httpHeader = this.analyzeHeader(httpHeader[1]);
             if (httpHeader === false) return false;
             let httpBody = this.analyzeHTTPBody(http[1], httpHeader['headers']['Content-Type']);
             if (httpBody === false) return false;
