@@ -126,7 +126,7 @@
             if (contentType[0] === "multipart/form-data") {
                 let boundary = "";
                 for (let i in contentType) {
-                    if (typeof contentType[i] === 'array' && contentType[i][0] === 'boundary') {
+                    if ((Array.isArray(contentType[i])) && contentType[i][0] === 'boundary') {
                         boundary = contentType[i][1];
                         break;
                     }
