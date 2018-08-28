@@ -16,6 +16,7 @@
 </style>
 <script>
     class HTTPRequest {
+
         /*
         rawLine_;
         rawHeader_;
@@ -26,6 +27,7 @@
         httpRequest_;
         success_;
         */
+
         static separate_(str, delimiter) {
             if (typeof str !== 'string' || typeof delimiter !== 'string') return str;
             const idx = str.indexOf(delimiter);
@@ -46,36 +48,40 @@
             const rawLine = httpHeader[0];
             const rawHeader = httpHeader[1];
             const rawBody = http[1];
-            const httpLine = HTTPRequest.analyzeLine(httpHeader[0]);
+            const httpLine = this.analyzeLine(httpHeader[0]);
             if (httpLine === false) return false;
-            httpHeader = HTTPRequest.analyzeHeader(httpHeader[1]);
+            httpHeader = this.analyzeHeader(httpHeader[1]);
             if (httpHeader === false) return false;
             let httpBody = [];
             if (typeof httpHeader['Content-Type'] !== 'undefined') httpBody = this.analyzeHTTPBody(http[1], httpHeader['Content-Type']);
             else httpBody = this.analyzeHTTPBody(http[1]);
             if (httpBody === false) return false;
 
+            /*
             this.rawLine_ = rawLine;
             this.rawHeader_ = rawHeader;
             this.rawBody_ = rawBody;
             this.line_ = httpLine;
             this.header_ = httpHeader;
             this.body_ = httpBody;
+            */
             this.success_ = true;
         }
 
-        static analyzeLine(line) {
+        analyzeLine(line) {
             const q = line.split(' ');
-            if (q.length !== 3) return false;
+            if (q.length <= 1) return false;
             const method = q[0];
             const url = q[1];
             const version = q[2];
+            this.rawLine_ = line;
 
-            return {
+            this.line_ = {
                 'method': method,
                 'url': url,
                 'version': version
             };
+            return this.line_;
         }
 
         static analyzeHeaderOption(headerValue) {
@@ -89,23 +95,26 @@
             return ret;
         }
 
-        static analyzeHeader(headers) {
-            headers = headers.split(/\r\n|\n/);
+        analyzeHeader(rawHeader) {
+            let header = rawHeader.split(/\r\n|\n/);
             const ret = {
                 'custom': [], // custom headers
             };
-            for (const i in headers) {
-                const h = HTTPRequest.separate_(headers[i], ':');
+            for (const i in header) {
+                const h = HTTPRequest.separate_(header[i], ':');
                 if (h.length === 2) {
                     h[0] = h[0].trim(); // header name
                     h[1] = h[1].trim(); // value
                     if (!forbiddenHeader[h[0]]) ret['custom'].push(h); // custom header
                     else { // forbidden header
-                        ret[h[0]] = HTTPRequest.analyzeHeaderOption(h[1]);
+                        if (h[0] === 'Referer') ret[h[0]] = h[1]; // Referer: http://localhost?a=b etc...
+                        else ret[h[0]] = HTTPRequest.analyzeHeaderOption(h[1]);
                     }
                 }
             }
-            return ret;
+            this.rawHeader_ = rawHeader;
+            this.header_ = ret;
+            return this.line_;
         }
 
         static analyzeHTTPHeader(httpHeader) {
@@ -121,7 +130,7 @@
             };
         }
 
-        analyzeHTTPBody(httpbody, contentType = "") {
+        analyzeHTTPBody(rawBody, contentType = "") {
             let ret;
             if (contentType[0] === "multipart/form-data") {
                 let boundary = "";
@@ -131,10 +140,12 @@
                         break;
                     }
                 }
-                ret = HTTPRequest.analyzeMultipartParams(httpbody, boundary);
+                ret = HTTPRequest.analyzeMultipartParams(rawBody, boundary);
             } else {
-                ret = HTTPRequest.analyzeParams(httpbody);
+                ret = HTTPRequest.analyzeParams(rawBody);
             }
+            this.rawBody_ = rawBody;
+            this.body_ = ret;
             return ret;
         }
 
@@ -197,6 +208,7 @@
     }
 
     let form;
+    let http;
 
     const HTMLrender = {
         inputSet: function (name, value, i, prefix = '') {
@@ -206,12 +218,12 @@
             return content;
         },
 
-        input: function (name, value, type = 'text',isEscape=true) {
-            if(isEscape){
-                name=escapeHTML(name);
-                value=escapeHTML(value);
+        input: function (name, value, type = 'text', isEscape = true) {
+            if (isEscape) {
+                name = escapeHTML(name);
+                value = escapeHTML(value);
             }
-            return '<input type="'+type+'" name="'+name+'" value="'+value+'" />';
+            return '<input type="' + type + '" name="' + name + '" value="' + value + '" />';
         }
     };
 
@@ -260,7 +272,7 @@
             ezhtml += '<form target="dummyfrm" name="evilform" action="' + req['url'] + '" method="' + req['method'] + '" enctype="' + req['enctype'] + '">\n';
             const params = req['params'];
             for (const i in params) {
-                ezhtml += HTMLrender.input(URLdecode(params[i][0]), URLdecode(params[i][1]), ((!isAutoSubmit() && isSpecifiable()) ? ("text") : ("hidden")))+"\n";
+                ezhtml += HTMLrender.input(URLdecode(params[i][0]), URLdecode(params[i][1]), ((!isAutoSubmit() && isSpecifiable()) ? ("text") : ("hidden"))) + "\n";
                 //ezhtml += '<input type="' + ((!isAutoSubmit() && isSpecifiable()) ? ("text") : ("hidden")) + '" name="' + escapeHTML(URLdecode(params[i][0])) + '" value="' + escapeHTML(URLdecode(params[i][1])) + '" />\n';
             }
             ezhtml += '</form>\n';
@@ -311,8 +323,8 @@
             ezhtml += "let xhr=new XMLHttpRequest();\n";
             ezhtml += "xhr.open('" + req['method'] + "','" + req['url'] + "');\n";
             ezhtml += "xhr.withCredentials = true;\n";
-            ezhtml += "xhr.setRequestHeader('Content-Type','" + req['enctype'] + ";'";
-            if (req['enctype'] === "multipart/form-data") ezhtml += "+' boundary=" + req['boundary'] + "'";
+            ezhtml += "xhr.setRequestHeader('Content-Type','" + req['enctype'] + "'";
+            if (req['enctype'] === "multipart/form-data") ezhtml += "+'; boundary=" + req['boundary'] + "'";
             ezhtml += ");\n";
             ezhtml += "xhr.send('" + escapeJavascript(getParamsRaw()) + "');\n";
             ezhtml += "}\n";
@@ -488,6 +500,7 @@
         } else {
             document.getElementById("span-enctypeother").style.visibility = "hidden";
         }
+        return enctype;
     }
 
     function generatePoC(isSubmit) {
@@ -548,18 +561,19 @@
         return form.specifiable.checked;
     }
 
-    const validProtocol={
-        'http':1,
-        'https':1,
-        'ftp':1
+    const validProtocol = {
+        'http': 1,
+        'https': 1,
+        'ftp': 1
     };
 
-    function validateURL(url){
+    function validateURL(url) {
         if (typeof url !== 'string') return false;
         const idx = url.indexOf(':');
         return (typeof validProtocol[url.substring(0, idx)]) !== 'undefined';
 
     }
+
     function detectBoundary() {
         let pm = getParamsRaw();
         pm = pm.split(/\r\n|\n/);
@@ -601,23 +615,23 @@
             errorMsg("Raw HTTP request is empty!");
             return;
         }
-        let a = new HTTPRequest(req);
-        if (!a.success) {
+        http = new HTTPRequest(req);
+        if (!http.success) {
             errorMsg("failed to parse HTTP request!");
             return;
         }
-        form.url.value = a.line['url'];
-        form.method.value = a.line['method'];
-        if (typeof a.header['Content-Type'] !== 'undefined') {
-            if (enctypes[a.header['Content-Type'][0]]) form.enctype.value = a.header['Content-Type'][0];
+        form.url.value = http.line['url'];
+        form.method.value = http.line['method'];
+        if (typeof http.header['Content-Type'] !== 'undefined') {
+            if (enctypes[http.header['Content-Type'][0]]) form.enctype.value = http.header['Content-Type'][0];
             else {
                 form.enctype.value = "other";
-                form.enctypeother.value = a.header['Content-Type'][0];
+                form.enctypeother.value = http.header['Content-Type'][0];
             }
-            triggerEnctype();
+            if (triggerEnctype() === "multipart/form-data") detectBoundary();
         }
-        form.params.value = a.rawBody;
-        form.headers.value = a.rawHeader;
+        form.params.value = http.rawBody;
+        form.headers.value = http.rawHeader;
     }
 
     function executeDownload(name, content, mimeType) {
