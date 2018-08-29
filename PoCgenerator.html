@@ -622,6 +622,8 @@
         }
         form.url.value = http.line['url'];
         form.method.value = http.line['method'];
+        form.params.value = http.rawBody;
+        form.headers.value = http.rawHeader;
         if (typeof http.header['Content-Type'] !== 'undefined') {
             if (enctypes[http.header['Content-Type'][0]]) form.enctype.value = http.header['Content-Type'][0];
             else {
@@ -630,8 +632,6 @@
             }
             if (triggerEnctype() === "multipart/form-data") detectBoundary();
         }
-        form.params.value = http.rawBody;
-        form.headers.value = http.rawHeader;
     }
 
     function executeDownload(name, content, mimeType) {
