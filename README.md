@@ -5,13 +5,21 @@ generate CSRF PoC
 
 ## Parameters
 
+- send : send type(Form or XHR)
+- automatic submitting : submit when opening HTML file
+    - specifiable : specify value HTML page(beta)
+- HTTP Request : set raw HTTP Request
 - URL : Set URL
 - method : Set method
+- ~~header :Set HTTP header~~(future work)
 - enctype : Select enctype
-- params : Set URL encoded parameters
+    - boundary : Set boundary for multipart/form-data
+- body : Set HTTP body
 - title : Downloadable HTML title
 
 ## How to use
+
+Click "analyze" to analyze HTTP request & paste
 
 Click "generate and submit" to generate form & submit request.
 
@@ -21,6 +29,32 @@ Click "download HTML" to download CSRF PoC HTML.
 
 ## Example
 
+### using HTTP Request
+
+Enter the following value.
+
+```
+POST http://localhost/post.php HTTP/1.1
+Host: localhost
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:63.0) Gecko/20100101 Firefox/63.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: ja,en-US;q=0.7,en;q=0.3
+Accept-Encoding: gzip, deflate
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 78
+Connection: keep-alive
+Cookie: ucp_tabs=2; wp-settings-1=libraryContent%3Dbrowse%26mfold%3Do%26editor%3Dtinymce%26uploader%3D1; wp-settings-time-1=1535524023; wordpress_logged_in_86a9106ae65537651a8e456835b316ab=admin%7C1536409565%7C8RhEzw0sDtJ91FxFP0dHvh6hSxLcltB3ErbGiZ5Ae5J%7C778801fe295ae26bfa37ac95429e6c969ee7bb8d9b614df39c464f484f4918f3; pps_show_100=1
+Upgrade-Insecure-Requests: 1
+
+title=CSRF&name=hello+world&comment=%3Cscript%3Ealert%281%29%3B%3C%2Fscript%3E
+```
+
+Then click "analyze" and separate into 5 parameters(URL, method, header, enctype, body).
+
+Then click "download HTML" and download a HTML file.
+
+
+### using URL method etc...
 Enter the following values.
 
 - URL
@@ -38,7 +72,7 @@ POST
 application/x-www-form-urlencoded (default)
 ```
 
-- params
+- body
 ```
 title=CSRF&name=hello+world&comment=%3Cscript%3Ealert(1)%3B%3C%2Fscript%3E
 ```
@@ -58,7 +92,9 @@ Then click "generate only" (or "generate and submit" ) and Output a HTML form (a
 ```
 Hello CSRF PoC
 ```
+
 Then click "download HTML" and download a HTML file.
+
 ```
 <!DOCTYPE html>
 
@@ -99,11 +135,17 @@ Then click "URL encode" and encode input string.
 
 # Change log
 
+v1.4
+
+- added raw Request
+- added detect boundary
+- added an option to specifiable value
+
 v1.3
 
 - added XHR multipart/form-data transmission
-- added an option to send automatinally
-- arvitrary enctype
+- added an option to send automatically
+- arbitrary enctype
 
 v1.2
 
