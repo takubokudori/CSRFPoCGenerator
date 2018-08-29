@@ -45,9 +45,9 @@
             httpRequest = httpRequest.replace(/\r?\n/g, "\r\n");
             const http = HTTPRequest.separate_(httpRequest, "\r\n\r\n");
             let httpHeader = HTTPRequest.separate_(http[0], "\r\n");
-            const rawLine = httpHeader[0];
-            const rawHeader = httpHeader[1];
-            const rawBody = http[1];
+            //const rawLine = httpHeader[0];
+            //const rawHeader = httpHeader[1];
+            //const rawBody = http[1];
             const httpLine = this.analyzeLine(httpHeader[0]);
             if (httpLine === false) return false;
             httpHeader = this.analyzeHeader(httpHeader[1]);
@@ -87,7 +87,7 @@
         static analyzeHeaderOption(headerValue) {
             let v = headerValue.split('; ');
             const ret = [];
-            for (const i in v) {
+            for (let i=0;i<v.length;i++) {
                 let k = v[i].split('=');
                 if (k.length === 1) ret.push(k[0]); // string
                 else ret.push(k); // array
@@ -100,7 +100,7 @@
             const ret = {
                 'custom': [], // custom headers
             };
-            for (const i in header) {
+            for (let i=0;i<header.length;i++) {
                 const h = HTTPRequest.separate_(header[i], ':');
                 if (h.length === 2) {
                     h[0] = h[0].trim(); // header name
@@ -117,27 +117,16 @@
             return this.line_;
         }
 
-        static analyzeHTTPHeader(httpHeader) {
-            httpHeader = HTTPRequest.separate_(httpHeader, "\r\n");
-            /* httpHeader[0]->requestLine, httpHeader[1]->header */
-            const line = HTTPRequest.analyzeLine(httpHeader[0]);
-            if (line === false) return false;
-            const headers = HTTPRequest.analyzeHeader(httpHeader[1]);
-            if (headers === false) return false;
-            return {
-                'line': line,
-                'headers': headers,
-            };
-        }
-
         analyzeHTTPBody(rawBody, contentType = "") {
             let ret;
             if (contentType[0] === "multipart/form-data") {
                 let boundary = "";
                 for (let i in contentType) {
-                    if ((Array.isArray(contentType[i])) && contentType[i][0] === 'boundary') {
-                        boundary = contentType[i][1];
-                        break;
+                    if(contentType.hasOwnProperty(i)) {
+                        if ((Array.isArray(contentType[i])) && contentType[i][0] === 'boundary') {
+                            boundary = contentType[i][1];
+                            break;
+                        }
                     }
                 }
                 ret = HTTPRequest.analyzeMultipartParams(rawBody, boundary);
@@ -271,7 +260,7 @@
             if (req === false) return false;
             ezhtml += '<form target="dummyfrm" name="evilform" action="' + req['url'] + '" method="' + req['method'] + '" enctype="' + req['enctype'] + '">\n';
             const params = req['params'];
-            for (const i in params) {
+            for (let i=0;i<params.length;i++) {
                 ezhtml += HTMLrender.input(URLdecode(params[i][0]), URLdecode(params[i][1]), ((!isAutoSubmit() && isSpecifiable()) ? ("text") : ("hidden"))) + "\n";
                 //ezhtml += '<input type="' + ((!isAutoSubmit() && isSpecifiable()) ? ("text") : ("hidden")) + '" name="' + escapeHTML(URLdecode(params[i][0])) + '" value="' + escapeHTML(URLdecode(params[i][1])) + '" />\n';
             }
@@ -598,7 +587,7 @@
         if (params === "") return false;
         const param = params.split("&");
         const dict = [];
-        for (const i in param) {
+        for (let i=0;i<param.length;i++) {
             const t = param[i].split("=");
             dict.push(t);
         }
@@ -623,7 +612,7 @@
         form.url.value = http.line['url'];
         form.method.value = http.line['method'];
         form.params.value = http.rawBody;
-        form.headers.value = http.rawHeader;
+        form.header.value = http.rawHeader;
         if (typeof http.header['Content-Type'] !== 'undefined') {
             if (enctypes[http.header['Content-Type'][0]]) form.enctype.value = http.header['Content-Type'][0];
             else {
@@ -687,7 +676,7 @@
         executeDownload(name, content, mimeType);
     }
 </script>
-<h1>PoCGenerator v1.3</h1>
+<h1>PoCGenerator v1.4</h1>
 
 <div>
     URLencode:<textarea id="uea" name="urlencodearea" rows="1" cols="60" title="URL encode"></textarea>
@@ -715,10 +704,9 @@
     <div>HTTP Request:<br/>
         <textarea name="httprequest" rows="6" cols="60" title="HTTP Request"></textarea><br/>
         <button name="analyze" onclick="analyzeRequest();return false;">analyze</button>
-    </div>
-    <div>URL:<input type="text" name="url" size="50" title="URL"/></div>
+        URL:<input type="text" name="url" size="50" title="URL"/></div>
     <div>method: <input type="text" name="method" size="8" value="POST" title="method"/></div>
-    <div>headers: <textarea name="headers" rows="6" cols="40" title="header"></textarea></div>
+    <div>header: <textarea name="header" rows="6" cols="40" title="header"></textarea></div>
     <div>enctype: <select name="enctype" onchange="triggerEnctype();" title="enctype">
     </select><span class="hide" id="span-enctypeother">other:<input type="text" name="enctypeother" size="20" value=""
                                                                     title="enctype"/></span>
@@ -727,7 +715,7 @@
                                                          title="boundary"/>
         <button onclick="detectBoundary();return false;">detect boundary</button>
     </div>
-    <div>params:<br/>
+    <div>body:<br/>
         <textarea name="params" rows="6" cols="60" title="Parameter"></textarea><br/>
         <button name="generate" onclick="generatePoC(true);return false;">generate and submit</button>
         <button name="generate" onclick="generatePoC(false);return false;">generate only</button>
