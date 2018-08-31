@@ -34,52 +34,40 @@
             return [str.substring(0, idx), str.slice(idx + delimiter.length)];
         }
 
-        constructor(httpRequest) {
+        constructor(httpRequest = "") {
             this.success_ = false;
+            if (httpRequest === "") return; // empty request
             this.analyzeHTTPRequest(httpRequest);
         }
 
         analyzeHTTPRequest(httpRequest) {
             this.success_ = false;
             this.httpRequest_ = httpRequest;
-            httpRequest = httpRequest.replace(/\r?\n/g, "\r\n");
-            const http = HTTPRequest.separate_(httpRequest, "\r\n\r\n");
-            let httpHeader = HTTPRequest.separate_(http[0], "\r\n");
-            //const rawLine = httpHeader[0];
-            //const rawHeader = httpHeader[1];
-            //const rawBody = http[1];
+            httpRequest = httpRequest.replace(/\r?\n/g, "\r\n"); // unified \n -> \r\n
+            const http = HTTPRequest.separate_(httpRequest, "\r\n\r\n"); // [0]->request line & header, [1]->body
+            let httpHeader = HTTPRequest.separate_(http[0], "\r\n"); // [0]->request line, [1]->header
             const httpLine = this.analyzeLine(httpHeader[0]);
-            if (httpLine === false) return false;
+            if (httpLine === false) return false; // failed to parse request line.
             httpHeader = this.analyzeHeader(httpHeader[1]);
-            if (httpHeader === false) return false;
+            if (httpHeader === false) return false; // failed to parse header.
             let httpBody = [];
             if (typeof httpHeader['Content-Type'] !== 'undefined') httpBody = this.analyzeHTTPBody(http[1], httpHeader['Content-Type']);
             else httpBody = this.analyzeHTTPBody(http[1]);
-            if (httpBody === false) return false;
+            if (httpBody === false) return false; // failed to parse body.
 
-            /*
-            this.rawLine_ = rawLine;
-            this.rawHeader_ = rawHeader;
-            this.rawBody_ = rawBody;
-            this.line_ = httpLine;
-            this.header_ = httpHeader;
-            this.body_ = httpBody;
-            */
             this.success_ = true;
+            return true;
         }
 
         analyzeLine(line) {
             const q = line.split(' ');
             if (q.length <= 1) return false;
-            const method = q[0];
-            const url = q[1];
-            const version = q[2];
             this.rawLine_ = line;
 
             this.line_ = {
-                'method': method,
-                'url': url,
-                'version': version
+                'method': q[0],
+                'url': q[1],
+                'version': q[2]
             };
             return this.line_;
         }
@@ -87,7 +75,7 @@
         static analyzeHeaderOption(headerValue) {
             let v = headerValue.split('; ');
             const ret = [];
-            for (let i=0;i<v.length;i++) {
+            for (let i = 0; i < v.length; i++) {
                 let k = v[i].split('=');
                 if (k.length === 1) ret.push(k[0]); // string
                 else ret.push(k); // array
@@ -95,12 +83,12 @@
             return ret;
         }
 
-        analyzeHeader(rawHeader) {
+        static analyzeHeader_(rawHeader){
             let header = rawHeader.split(/\r\n|\n/);
             const ret = {
                 'custom': [], // custom headers
             };
-            for (let i=0;i<header.length;i++) {
+            for (let i = 0; i < header.length; i++) {
                 const h = HTTPRequest.separate_(header[i], ':');
                 if (h.length === 2) {
                     h[0] = h[0].trim(); // header name
@@ -112,8 +100,11 @@
                     }
                 }
             }
+            return ret;
+        }
+        analyzeHeader(rawHeader) {
             this.rawHeader_ = rawHeader;
-            this.header_ = ret;
+            this.header_ = HTTPRequest.analyzeHeader_(rawHeader);
             return this.line_;
         }
 
@@ -122,7 +113,7 @@
             if (contentType[0] === "multipart/form-data") {
                 let boundary = "";
                 for (let i in contentType) {
-                    if(contentType.hasOwnProperty(i)) {
+                    if (contentType.hasOwnProperty(i)) {
                         if ((Array.isArray(contentType[i])) && contentType[i][0] === 'boundary') {
                             boundary = contentType[i][1];
                             break;
@@ -140,9 +131,16 @@
 
         static analyzeMultipartParams(params, boundary) {
             if (typeof params !== 'string' || params === '') return [];
-            let dict = [];
+            let ret = [];
+            let h;
             params = params.split('--' + boundary);
-            return dict;
+            for (let i = 0; i < params.length; i++) {
+                h = HTTPRequest.separate_(params[i], "\r\n\r\n"); // [0]->header, [1]->params
+                h[0] = HTTPRequest.analyzeHeader_(h[0]);
+                ret.push([h[0], h[1]]);
+
+            }
+            return ret;
         }
 
         static analyzeParams(params) {
@@ -188,11 +186,13 @@
             return this.success_;
         }
 
+        // TODO: inherit this
         renderOperationHTML() {
             let content = "";
             for (let i in this.body_) {
-                content += HTMLrender.inputSet(this.body_[i][0], this.body_[i][1], i, 'b');
+                content += HTMLrender.inputSet(this.body_[i][0], this.body_[i][1], i, 'b') + '<br />';
             }
+            return content;
         }
     }
 
@@ -216,11 +216,6 @@
         }
     };
 
-    if (!String.prototype.trim) { // for IE <9
-        String.prototype.trim = function () {
-            return this.replace(/^\s+|\s+$/g, '');
-        };
-    }
     const forbiddenHeader = {
         'Accept-Charset': '1',
         'Accept-Encoding': '1',
@@ -260,9 +255,8 @@
             if (req === false) return false;
             ezhtml += '<form target="dummyfrm" name="evilform" action="' + req['url'] + '" method="' + req['method'] + '" enctype="' + req['enctype'] + '">\n';
             const params = req['params'];
-            for (let i=0;i<params.length;i++) {
+            for (let i = 0; i < params.length; i++) {
                 ezhtml += HTMLrender.input(URLdecode(params[i][0]), URLdecode(params[i][1]), ((!isAutoSubmit() && isSpecifiable()) ? ("text") : ("hidden"))) + "\n";
-                //ezhtml += '<input type="' + ((!isAutoSubmit() && isSpecifiable()) ? ("text") : ("hidden")) + '" name="' + escapeHTML(URLdecode(params[i][0])) + '" value="' + escapeHTML(URLdecode(params[i][1])) + '" />\n';
             }
             ezhtml += '</form>\n';
             ezhtml += '<iframe src="x" width="1" height="1" name="dummyfrm" style="visibility:hidden"></iframe>';
@@ -276,18 +270,13 @@
         generateHTML: function (title, bodyhtml) {
             let content = getHTMLheader(title);
             content += '<body';
-            if (isAutoSubmit()) content += ' onload="document.evilform.submit();"';
+            if (isAutoSubmit()) content += ' onload="csrfSubmit();"';
             content += '>\n';
             content += bodyhtml;
             if (!isAutoSubmit()) {
                 content += '<button onclick="csrfSubmit();">submit</button>\n';
-                content += '<sc' + 'ript>\n';
-                content += 'function csrfSubmit(){\n';
-                content += 'let submit = HTMLFormElement.prototype["submit"].bind(document.evilform);\n';
-                content += 'submit();\n';
-                content += '}\n';
-                content += '</sc' + 'ript>\n';
             }
+            content += formfunc.sendFunction();
             content += '\n<p>' + title + '</p>\n';
             content += '</body>\n';
             content += getHTMLfooter();
@@ -299,6 +288,16 @@
             document.getElementById("stat").innerHTML += "<p>Request sent.</p><p>" + escapeHTML(req['url']) + "</p><p>" + escapeHTML(req['params']) + "</p><hr />";
             const submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
             submit();
+        },
+
+        sendFunction: function () {
+            let content = '<sc' + 'ript>\n';
+            content += 'function csrfSubmit(){\n';
+            content += 'let submit = HTMLFormElement.prototype["submit"].bind(document.evilform);\n';
+            content += 'submit();\n';
+            content += '}\n';
+            content += '</sc' + 'ript>\n';
+            return content;
         }
 
     };
@@ -308,7 +307,7 @@
             const req = getRequest();
             if (req === false) return false;
             let ezhtml = "";
-            ezhtml += "function csrfXHR(){\n";
+            ezhtml += "function csrfSubmit(){\n";
             ezhtml += "let xhr=new XMLHttpRequest();\n";
             ezhtml += "xhr.open('" + req['method'] + "','" + req['url'] + "');\n";
             ezhtml += "xhr.withCredentials = true;\n";
@@ -325,10 +324,10 @@
         generateHTML: function (title, bodyhtml) {
             let content = getHTMLheader(title);
             content += '<body';
-            if (isAutoSubmit()) content += ' onload="csrfXHR();"';
+            if (isAutoSubmit()) content += ' onload="csrfSubmit();"';
             content += '>\n';
             content += bodyhtml;
-            if (!isAutoSubmit()) content += '<button onclick="csrfXHR();">submit</button>\n';
+            if (!isAutoSubmit()) content += '<button onclick="csrfSubmit();">submit</button>\n';
             content += '\n<p>' + title + '</p>\n';
             content += '</body>\n';
             content += getHTMLfooter();
@@ -337,7 +336,7 @@
 
         send: function () {
             eval(document.getElementById("evilzone").textContent);
-            csrfXHR();
+            csrfSubmit();
         }
     };
 
@@ -493,6 +492,7 @@
     }
 
     function generatePoC(isSubmit) {
+        http = new HTTPRequest();
         const success = func.generate();
         if (success && isSubmit) func.send();
     }
@@ -514,10 +514,6 @@
             return false;
         }
         const params = getParams();
-        if (params === false) {
-            errorMsg("params is empty!");
-            return false;
-        }
         const boundary = form.boundary.value;
         return {
             'url': url,
@@ -587,7 +583,7 @@
         if (params === "") return false;
         const param = params.split("&");
         const dict = [];
-        for (let i=0;i<param.length;i++) {
+        for (let i = 0; i < param.length; i++) {
             const t = param[i].split("=");
             dict.push(t);
         }
@@ -621,6 +617,7 @@
             }
             if (triggerEnctype() === "multipart/form-data") detectBoundary();
         }
+        document.getElementById("param-operation").innerHTML = http.renderOperationHTML();
     }
 
     function executeDownload(name, content, mimeType) {
@@ -724,6 +721,7 @@
         <button name="downloadhtml" onclick="generatePoC();downloadHTML();return false;">download HTML</button>
     </div>
 </form>
+<div id="param-operation"></div>
 <div id="evilzone" style="visibility:hidden;display:none;"></div>
 <hr/>
 <div id="nowhtml"></div>
