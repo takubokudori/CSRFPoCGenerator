@@ -50,8 +50,11 @@
             if (httpLine === false) return false; // failed to parse request line.
             httpHeader = this.analyzeHeader(httpHeader[1]);
             if (httpHeader === false) return false; // failed to parse header.
+
+            // body
             let httpBody = [];
             if (typeof httpHeader['Content-Type'] !== 'undefined') httpBody = this.analyzeHTTPBody(http[1], httpHeader['Content-Type']);
+            else if (httpLine['method'] === "GET") httpBody = this.analyzeHTTPBody(HTTPRequest.separate_(httpLine['url'], "?")[1]);
             else httpBody = this.analyzeHTTPBody(http[1]);
             if (httpBody === false) return false; // failed to parse body.
 
@@ -72,6 +75,23 @@
             return this.line_;
         }
 
+        static analyzeURL(url) {
+            const a = HTTPRequest.separate_(url, "?");
+            return {
+                'url': a[0],
+                'querystring': HTTPRequest.analyzeQueryString(a[1])
+            };
+        }
+
+        static analyzeQueryString(qs) {
+            const p = qs.split("&");
+            let dict = [];
+            for (let i = 0; i < p.length; i++) {
+                dict.push(p[i].split("="));
+            }
+            return dict;
+        }
+
         static analyzeHeaderOption(headerValue) {
             let v = headerValue.split('; ');
             const ret = [];
@@ -83,7 +103,7 @@
             return ret;
         }
 
-        static analyzeHeader_(rawHeader){
+        static analyzeHeader_(rawHeader) {
             let header = rawHeader.split(/\r\n|\n/);
             const ret = {
                 'custom': [], // custom headers
@@ -102,6 +122,7 @@
             }
             return ret;
         }
+
         analyzeHeader(rawHeader) {
             this.rawHeader_ = rawHeader;
             this.header_ = HTTPRequest.analyzeHeader_(rawHeader);
