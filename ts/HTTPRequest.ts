@@ -1,3 +1,5 @@
+// analyze raw request
+// store header etc.
 class HTTPRequest {
 
     private rawLine_: string;
@@ -41,7 +43,7 @@ class HTTPRequest {
         return true;
     }
 
-    analyzeLine(line): boolean {
+    analyzeLine(line: string): boolean {
         const q = line.split(' ');
         if (q.length <= 1) return false;
         this.rawLine_ = line;
@@ -54,7 +56,13 @@ class HTTPRequest {
         return true;
     }
 
-    static analyzeURL(url): { [key: string]: any } {
+    static buildLine(line: { [key: string]: string }): string {
+        if (!line['method']) line['method'] = 'POST';
+        if (!line['version']) line['version'] = 'HTTP/1.1';
+        return `${line['url']} ${line['method']} ${line['version']}`;
+    }
+
+    static analyzeURL(url: string): { [key: string]: any } {
         const a = HTTPRequest.separate_(url, "?");
         return {
             'url': a[0],
@@ -62,7 +70,7 @@ class HTTPRequest {
         };
     }
 
-    static analyzeHeaderOption(headerValue): string[] {
+    static analyzeHeaderOption(headerValue: string): string[] {
         let v = headerValue.split('; ');
         const ret = [];
         for (let i = 0; i < v.length; i++) {
@@ -73,7 +81,7 @@ class HTTPRequest {
         return ret;
     }
 
-    static analyzeHeader_(rawHeader): { [key: string]: string[] } {
+    static analyzeHeader_(rawHeader: string): { [key: string]: string[] } {
         let header = rawHeader.split(/\r\n|\n/);
         const ret = {
             'custom': [], // custom headers
@@ -99,25 +107,33 @@ class HTTPRequest {
         return true;
     }
 
+    static buildHeader(header: { [key: string]: string[] }): string {
+        return "";
+    }
+
     public analyzeHTTPBody(rawBody: string, contentType: string[] = []): boolean {
         let ret;
         if (contentType[0] === "multipart/form-data") {
-            let boundary = "";
-            for (let i in contentType) {
-                if (contentType.hasOwnProperty(i)) {
-                    if ((Array.isArray(contentType[i])) && contentType[i][0] === 'boundary') {
-                        boundary = contentType[i][1];
-                        break;
-                    }
-                }
-            }
-            ret = HTTPRequest.analyzeMultipartParams(rawBody, boundary);
+            ret = HTTPRequest.analyzeMultipartParams(rawBody, HTTPRequest.getBoundary(contentType));
         } else {
             ret = HTTPRequest.analyzeParams(rawBody);
         }
         this.rawBody_ = rawBody;
         this.body_ = ret;
         return true;
+    }
+
+    public static getBoundary(contentType: string[]): string {
+        let boundary = "";
+        for (let i in contentType) {
+            if (contentType.hasOwnProperty(i)) {
+                if ((Array.isArray(contentType[i])) && contentType[i][0] === 'boundary') {
+                    boundary = contentType[i][1];
+                    break;
+                }
+            }
+        }
+        return boundary;
     }
 
     static analyzeMultipartParams(params: string, boundary: string) {
@@ -228,18 +244,3 @@ const HTMLrender = {
     }
 };
 
-function escapeHTML(str: string): string {
-    if (typeof str !== 'string') return str;
-    return str.replace(/[&'`"<>\n\r]/g, function (match) {
-        return {
-            '\r': '&#x0D',
-            '\n': '&#x0A',
-            '&': '&amp;',
-            "'": '&#x27;',
-            '`': '&#x60;',
-            '"': '&quot;',
-            '<': '&lt;',
-            '>': '&gt;',
-        }[match]
-    });
-}
