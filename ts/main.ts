@@ -93,6 +93,10 @@ function getMethod(): string {
     return form.method.value;
 }
 
+function getVersion(): string {
+    return form.version.value;
+}
+
 function getEnctype(): string {
     const et = form.enctype.value;
     if (et === "other") return form.enctypeother.value;
@@ -155,9 +159,19 @@ function sendPoC() {
 }
 
 function analyzeLine() {
-    const url = getURL();
-    const method = getMethod();
-    http.analyzeLine();
+    http.analyzeLine(HTTPRequest.buildLine({
+        'url': getURL(),
+        'method': getMethod(),
+        'version': getVersion()
+    }));
+}
+
+function analyzeHeader() {
+    http.analyzeHeader("");
+}
+
+function analyzeBody() {
+    http.analyzeHTTPBody(getParamsRaw());
 }
 
 function analyzeRequest() {

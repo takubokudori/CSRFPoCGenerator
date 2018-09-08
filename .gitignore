@@ -6,4 +6,8 @@
 !/js/*
 !/ts/
 !/ts/*
+!/css/
+!/css/*
+!/scss/
+!/scss/*
 !tsconfig.json
