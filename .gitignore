@@ -3,5 +3,7 @@
 !.gitignore
 !PoCgenerator.html
 !/js/
+!/js/*
 !/ts/
+!/ts/*
 !tsconfig.json
