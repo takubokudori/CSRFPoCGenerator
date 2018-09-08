@@ -1,14 +1,13 @@
+// analyze raw request
+// store header etc.
 var HTTPRequest = /** @class */ (function () {
     function HTTPRequest(httpRequest) {
-        if (httpRequest === void 0) {
-            httpRequest = "";
-        }
+        if (httpRequest === void 0) { httpRequest = ""; }
         this.success_ = false;
         if (httpRequest === "")
             return; // empty request
         this.analyzeHTTPRequest(httpRequest);
     }
-
     HTTPRequest.separate_ = function (str, delimiter) {
         if (typeof str !== 'string' || typeof delimiter !== 'string')
             return [];
@@ -49,6 +48,13 @@ var HTTPRequest = /** @class */ (function () {
             'version': q[2]
         };
         return true;
+    };
+    HTTPRequest.buildLine = function (line) {
+        if (!line['method'])
+            line['method'] = 'POST';
+        if (!line['version'])
+            line['version'] = 'HTTP/1.1';
+        return line['url'] + " " + line['method'] + " " + line['version'];
     };
     HTTPRequest.analyzeURL = function (url) {
         var a = HTTPRequest.separate_(url, "?");
@@ -96,22 +102,14 @@ var HTTPRequest = /** @class */ (function () {
         this.header_ = HTTPRequest.analyzeHeader_(rawHeader);
         return true;
     };
+    HTTPRequest.buildHeader = function (header) {
+        return "";
+    };
     HTTPRequest.prototype.analyzeHTTPBody = function (rawBody, contentType) {
-        if (contentType === void 0) {
-            contentType = [];
-        }
+        if (contentType === void 0) { contentType = []; }
         var ret;
         if (contentType[0] === "multipart/form-data") {
-            var boundary = "";
-            for (var i in contentType) {
-                if (contentType.hasOwnProperty(i)) {
-                    if ((Array.isArray(contentType[i])) && contentType[i][0] === 'boundary') {
-                        boundary = contentType[i][1];
-                        break;
-                    }
-                }
-            }
-            ret = HTTPRequest.analyzeMultipartParams(rawBody, boundary);
+            ret = HTTPRequest.analyzeMultipartParams(rawBody, HTTPRequest.getBoundary(contentType));
         }
         else {
             ret = HTTPRequest.analyzeParams(rawBody);
@@ -119,6 +117,18 @@ var HTTPRequest = /** @class */ (function () {
         this.rawBody_ = rawBody;
         this.body_ = ret;
         return true;
+    };
+    HTTPRequest.getBoundary = function (contentType) {
+        var boundary = "";
+        for (var i in contentType) {
+            if (contentType.hasOwnProperty(i)) {
+                if ((Array.isArray(contentType[i])) && contentType[i][0] === 'boundary') {
+                    boundary = contentType[i][1];
+                    break;
+                }
+            }
+        }
+        return boundary;
     };
     HTTPRequest.analyzeMultipartParams = function (params, boundary) {
         if (typeof params !== 'string' || params === '')
@@ -236,21 +246,15 @@ var forbiddenHeader = {
 };
 var HTMLrender = {
     inputSet: function (name, value, i, prefix) {
-        if (prefix === void 0) {
-            prefix = '';
-        }
+        if (prefix === void 0) { prefix = ''; }
         var content = '';
         content += HTMLrender.input(prefix + 'name[' + i + ']', name) + ":";
         content += HTMLrender.input(prefix + 'value[' + i + ']', value) + "\n";
         return content;
     },
     input: function (name, value, type, isEscape) {
-        if (type === void 0) {
-            type = 'text';
-        }
-        if (isEscape === void 0) {
-            isEscape = true;
-        }
+        if (type === void 0) { type = 'text'; }
+        if (isEscape === void 0) { isEscape = true; }
         if (isEscape) {
             name = escapeHTML(name);
             value = escapeHTML(value);
@@ -258,22 +262,4 @@ var HTMLrender = {
         return "<input type=\"" + type + "\" name=\"" + name + "\" value=\"" + value + "\" />";
     }
 };
-
-function escapeHTML(str) {
-    if (typeof str !== 'string')
-        return str;
-    return str.replace(/[&'`"<>\n\r]/g, function (match) {
-        return {
-            '\r': '&#x0D',
-            '\n': '&#x0A',
-            '&': '&amp;',
-            "'": '&#x27;',
-            '`': '&#x60;',
-            '"': '&quot;',
-            '<': '&lt;',
-            '>': '&gt;',
-        }[match];
-    });
-}
-
 //# sourceMappingURL=HTTPRequest.js.map
