@@ -4,6 +4,12 @@ var HTTPRequest = /** @class */ (function () {
     function HTTPRequest(httpRequest) {
         if (httpRequest === void 0) { httpRequest = ""; }
         this.success_ = false;
+        this.rawLine_ = "";
+        this.rawHeader_ = "";
+        this.rawBody_ = "";
+        this.line_ = {};
+        this.header_ = {};
+        this.body_ = [];
         if (httpRequest === "")
             return; // empty request
         this.analyzeHTTPRequest(httpRequest);
@@ -131,8 +137,6 @@ var HTTPRequest = /** @class */ (function () {
         return boundary;
     };
     HTTPRequest.analyzeMultipartParams = function (params, boundary) {
-        if (typeof params !== 'string' || params === '')
-            return [];
         var ret = [];
         var h;
         var paramArr = params.split('--' + boundary);
@@ -144,8 +148,6 @@ var HTTPRequest = /** @class */ (function () {
         return ret;
     };
     HTTPRequest.analyzeParams = function (params) {
-        if (typeof params !== 'string' || params === '')
-            return [];
         var param = params.split("&");
         var dict = [];
         for (var i in param) {
