@@ -1,0 +1,22 @@
+$prefixes: '', -moz-, -ms-, -webkit-;
+
+@mixin prefix($name,$value) {
+  @each $prefix in $prefixes {
+    #{$prefix}#{$name}: $value;
+  }
+}
+
+@mixin vprefix($name,$value) {
+  @each $prefix in $prefixes {
+    #{$name}: #{$prefix}$value;
+  }
+}
+
+.hide {
+  visibility: hidden;
+}
+
+.container {
+  @include vprefix(display, flex);
+  width: 50%
+}

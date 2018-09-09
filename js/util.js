@@ -1,4 +1,4 @@
-function escapeJavascript(str: string): string {
+function escapeJavascript(str) {
     return str.replace(/['"\\\n\r]|(cript>)/g, function (match) {
         return {
             '\r': '\\r',
@@ -7,21 +7,20 @@ function escapeJavascript(str: string): string {
             '"': '\\\"',
             "\\": '\\\\',
             "cript>": 'cr\'+\'ipt>',
-        }[match]
+        }[match];
     });
 }
-
-function escapeJavascriptCRLF(str: string): string {
+function escapeJavascriptCRLF(str) {
     return str.replace(/[\n\r]/g, function (match) {
         return {
             '\r': '\\r',
             '\n': '\\n',
-        }[match]
+        }[match];
     });
 }
-
-function escapeHTML(str: string): string {
-    if (typeof str !== 'string') return str;
+function escapeHTML(str) {
+    if (typeof str !== 'string')
+        return str;
     return str.replace(/[&'`"<>\n\r]/g, function (match) {
         return {
             '\r': '&#x0D',
@@ -32,41 +31,43 @@ function escapeHTML(str: string): string {
             '"': '&quot;',
             '<': '&lt;',
             '>': '&gt;',
-        }[match]
+        }[match];
     });
 }
-
-function e(str: string): string {
+function e(str) {
     return escapeHTML(str);
 }
-
-function fullEscapeHTML(str, withoutPrintable = false) {
-    if (typeof str !== 'string') return str;
-    let content = "";
-    for (let i = 0; i < str.length; i++) {
+function fullEscapeHTML(str, withoutPrintable) {
+    if (withoutPrintable === void 0) { withoutPrintable = false; }
+    if (typeof str !== 'string')
+        return str;
+    var content = "";
+    for (var i = 0; i < str.length; i++) {
         content += "&#x" + str.charCodeAt(i) + ";";
     }
     if (withoutPrintable) {
-        for (let i = 0; i < str.length; i++) {
-            let c = str.charCodeAt(i);
+        for (var i = 0; i < str.length; i++) {
+            var c = str.charCodeAt(i);
             // ! #$% ()*+,-./0-9 ?@A-Z[\]^_`a-z...
-            let b = (c === 0x21) || (0x23 <= c && c <= 0x25) || (0x27 <= c && 0x3B) || (0x3F <= c && c <= 0x7E);
+            var b = (c === 0x21) || (0x23 <= c && c <= 0x25) || (0x27 <= c && 0x3B) || (0x3F <= c && c <= 0x7E);
             content += (b ? ("&#x" + str.charCodeAt(i) + ";") : str[i]);
         }
     }
     return content;
 }
-
 /**
  * "abc" -> "String.fromCharCode(97,98,99)"
  */
 function toFromCharCodes(str) {
-    if (typeof str !== 'string') return str;
-    let content = "String.fromCharCode(";
-    for (let i = 0; i < str.length; i++) {
-        if (i !== 0) content += ',';
+    if (typeof str !== 'string')
+        return str;
+    var content = "String.fromCharCode(";
+    for (var i = 0; i < str.length; i++) {
+        if (i !== 0)
+            content += ',';
         content += str.charCodeAt(i);
     }
     content += ")";
     return content;
 }
+//# sourceMappingURL=util.js.map

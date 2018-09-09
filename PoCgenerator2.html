@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="author" content="takubokudori">
+    <meta name="description" content="Generate CSRF PoC form">
+    <link rel="author" href="https://github.com/takubokudori"/>
+    <link rel='stylesheet' href='css/main.css' type='text/css'/>
+    <script src="js/main.js"></script>
+    <script src="js/util.js"></script>
+    <script src="js/sendfunc.js"></script>
+    <script src="js/HTTPRequest.js"></script>
+    <title>PoC Generator</title>
+</head>
+<body>
+<script>
+    window.onload = function () {
+        func = formfunc;
+        form.form = document.getElementsByName("messageForm")[0];
+        for (const key in enctypes) {
+            let op = document.createElement("option");
+            op.value = key;
+            op.innerText = key;
+            if (enctypes[key] === 1) op.selected = true;
+            form.form.enctype.appendChild(op);
+        }
+        let op = document.createElement("option"); // append other
+        op.value = "other";
+        op.innerText = "other";
+        form.form.enctype.appendChild(op);
+    };
+
+</script>
+<h1>PoCGenerator v1.4</h1>
+
+<div>
+    URLencode:<textarea id="uea" name="urlencodearea" rows="1" cols="60" title="URL encode"></textarea>
+    <button name="encodeIT"
+            onclick="document.getElementById('uea').value=URLencode(document.getElementById('uea').value);return false;">
+        URL encode
+    </button>
+</div>
+<hr>
+
+
+<span id="errormsg" style="color:red;"></span>
+
+<form name="messageForm">
+    <div class="container">
+        <div class="input-area">
+            <div>send :
+                <input type="radio" name="sendmethod" id="form-method" value="formfunc" onclick="triggerFunc();"
+                       checked><label
+                        for="form-method">Form</label>
+                <input type="radio" name="sendmethod" id="xhr-method" value="xhrfunc" onclick="triggerFunc();"><label
+                        for="xhr-method">XHR</label>
+            </div>
+            <div>automatic submitting:
+                <input type="checkbox" name="autosubmit" value="autosubmit"
+                       onclick="triggerAuto();return true;" checked title="Automatic submitting"/>
+            </div>
+            <div class="hide" id="div-specifiable">specifiable:
+                <input type="checkbox" name="specifiable" value="specifiable"
+                       title="Specifiable parameter"/>
+            </div>
+            <div>HTTP Request:<br/>
+                <textarea name="httprequest" rows="6" cols="60" title="HTTP Request"
+                          placeholder="request"></textarea><br/>
+                <button name="analyze" onclick="analyzeRequest();return false;">analyze</button>
+            </div>
+            <div>
+                <input type="text" name="method" size="8" value="POST" title="method" placeholder="Method"/>
+                <input type="text" name="url" size="50" title="URL" placeholder="URL"/>
+                <input type="text" name="version" size="10" value="HTTP/1.1" title="version" placeholder="HTTP Version">
+            </div>
+            <div><textarea name="header" rows="6" cols="40" title="header" placeholder="HTTP Header"></textarea></div>
+            <div>enctype: <select name="enctype" onchange="triggerEnctype();" title="enctype">
+            </select><span class="hide" id="span-enctypeother">other:<input type="text" name="enctypeother" size="20"
+                                                                            value=""
+                                                                            title="enctype"/></span>
+            </div>
+            <div class="hide" id="div-boundary">boundary: <input type="text" name="boundary" size="20" value=""
+                                                                 title="boundary"/>
+                <button onclick="detectBoundary();return false;">detect boundary</button>
+            </div>
+            <div>body:<br/>
+                <textarea name="body" rows="6" cols="60" title="body" placeholder="HTTP Body"></textarea><br/>
+                <button name="generate" onclick="generatePoC(true);return false;">generate and submit</button>
+                <button name="generate" onclick="generatePoC(false);return false;">generate only</button>
+            </div>
+            <div>title:<input type="text" name="title" size="20" value="CSRF PoC" title="HTML title"/>
+                <button name="downloadhtml" onclick="generatePoC();downloadHTML();return false;">download HTML</button>
+            </div>
+        </div>
+        <div class="edit-area">
+            <div class="edit-line">Line:</div>
+            <div class="edit-header">Header:</div>
+            <div class="edit-body">Body:
+                <div id="param-operation"></div>
+            </div>
+        </div>
+    </div>
+</form>
+<div id="evilzone" style="visibility:hidden;display:none;"></div>
+<hr/>
+<div id="nowhtml"></div>
+<hr/>
+<p id="stat"></p>
+</body>
+</html>
