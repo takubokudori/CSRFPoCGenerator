@@ -1,4 +1,104 @@
-let form;
+// let form;
+
+class form {
+    static form;
+
+    static getSendMethod(): string {
+        return this.form.sendmethod.value;
+    }
+
+    static isAutoSubmit() {
+        return this.form.autosubmit.checked;
+    }
+
+    static isSpecifiable() {
+        return form.specifiable.checked;
+    }
+
+    static getHTTPRequest(): string {
+        return this.form.httprequest.value;
+    }
+
+    static getURL(): string {
+        return this.form.url.value;
+    }
+
+    static getMethod(): string {
+        return this.form.method.value;
+    }
+
+    static getVersion(): string {
+        return this.form.version.value;
+    }
+
+    static getHeader(): string {
+        return this.form.header.value;
+    }
+
+    static getEnctype(): string {
+        const et = this.form.enctype.value;
+        if (et === "other") return this.form.enctypeother.value;
+        return et;
+    }
+
+    static getBoundary(): string {
+        return this.form.boundary.value;
+    }
+
+    static getBody(): string {
+        return this.form.body.value;
+    }
+
+    static getTitle(): string {
+        return this.form.title.value;
+    }
+
+    static get sendmethod(): string {
+        return form.getSendMethod();
+    }
+
+    static get autosubmit() {
+        return form.isAutoSubmit();
+    }
+
+    static get httprequest(): string {
+        return form.getHTTPRequest();
+    }
+
+    static get url(): string {
+        return form.getURL();
+    }
+
+    static get method(): string {
+        return form.getMethod();
+    }
+
+    static get version(): string {
+        return form.getVersion();
+    }
+
+    static get header(): string {
+        return this.getHeader();
+    }
+
+    static get enctype(): string {
+        return this.getEnctype();
+    }
+
+    static get boundary(): string {
+        return this.getBoundary();
+    }
+
+    static get body(): string {
+        return form.getBody();
+    }
+
+    static get title(): string {
+        return form.getTitle();
+    }
+
+}
+
 let http;
 let func;
 const enctypes = {
@@ -23,13 +123,13 @@ function setEvilTextContent(ezhtml, isScript = false) {
 }
 
 function triggerFunc(): void {
-    const sm = form.sendmethod.value;
+    const sm = form.getSendMethod();
     eval('func=' + sm + ';');
 }
 
 
 function triggerAuto(): void {
-    const as = form.autosubmit.checked;
+    const as = form.isAutoSubmit();
     if (as) {
         document.getElementById("div-specifiable").style.visibility = "hidden";
     } else {
@@ -38,7 +138,7 @@ function triggerAuto(): void {
 }
 
 function triggerEnctype() {
-    const enctype = form.enctype.value;
+    const enctype = form.getEnctype();
     if (enctype === "multipart/form-data") {
         document.getElementById("div-boundary").style.visibility = "visible";
     } else {
@@ -54,28 +154,31 @@ function triggerEnctype() {
 
 function generatePoC(isSubmit): void {
     http = new HTTPRequest();
+    analyzeLine();
+    analyzeHeader();
+    analyzeBody();
     const success = func.generate();
     if (success && isSubmit) func.send();
 }
 
 function getRequest(): {} {
-    const url = getURL();
+    const url = form.getURL();
     if (url === "") {
         errorMsg("URL is empty!");
         return false;
     }
-    const method = getMethod();
+    const method = form.getMethod();
     if (method === "") {
         errorMsg("method is empty!");
         return false;
     }
-    const enctype = getEnctype();
+    const enctype = form.getEnctype();
     if (enctype === "") {
         errorMsg("enctype is empty!");
         return false;
     }
-    const params = getParams();
-    const boundary = form.boundary.value;
+    const params = form.getBody();
+    const boundary = form.boundary;
     return {
         'url': url,
         'method': method,
@@ -83,32 +186,6 @@ function getRequest(): {} {
         'params': params,
         'boundary': boundary
     };
-}
-
-function getURL(): string {
-    return form.url.value;
-}
-
-function getMethod(): string {
-    return form.method.value;
-}
-
-function getVersion(): string {
-    return form.version.value;
-}
-
-function getEnctype(): string {
-    const et = form.enctype.value;
-    if (et === "other") return form.enctypeother.value;
-    return et;
-}
-
-function isAutoSubmit() {
-    return form.autosubmit.checked;
-}
-
-function isSpecifiable() {
-    return form.specifiable.checked;
 }
 
 const validProtocol = {
@@ -125,33 +202,17 @@ function validateURL(url) {
 }
 
 function detectBoundary() {
-    let pm: string[] = getParamsRaw().split(/\r\n|\n/);
+    let pm: string[] = form.body.split(/\r\n|\n/);
 
     let k;
     for (let i = pm.length - 1; i >= 0; i--) {
         k = pm[i].match(/^--[0-9a-zA-Z-]+--$/g);
         if (k != null && k.length === 1) {
-            form.boundary.value = k[0].slice(2, k.length - 3);
+            form.boundary = k[0].slice(2, k.length - 3);
             return;
         }
     }
     errorMsg("failed to detect boundary!Is params perfect format?");
-}
-
-function getParamsRaw(): string {
-    return form.params.value;
-}
-
-function getParams() {
-    const params = getParamsRaw();
-    if (params === "") return false;
-    const param = params.split("&");
-    const dict = [];
-    for (let i = 0; i < param.length; i++) {
-        const t = param[i].split("=");
-        dict.push(t);
-    }
-    return dict;
 }
 
 function sendPoC() {
@@ -160,22 +221,22 @@ function sendPoC() {
 
 function analyzeLine() {
     http.analyzeLine(HTTPRequest.buildLine({
-        'url': getURL(),
-        'method': getMethod(),
-        'version': getVersion()
+        'url': form.getURL(),
+        'method': form.getMethod(),
+        'version': form.getVersion()
     }));
 }
 
 function analyzeHeader() {
-    http.analyzeHeader("");
+    http.analyzeHeader(form.header);
 }
 
 function analyzeBody() {
-    http.analyzeHTTPBody(getParamsRaw());
+    http.analyzeHTTPBody(form.body);
 }
 
 function analyzeRequest() {
-    const req = form.httprequest.value;
+    const req = form.httprequest;
     if (req === "") {
         errorMsg("Raw HTTP request is empty!");
         return;
@@ -185,15 +246,16 @@ function analyzeRequest() {
         errorMsg("failed to parse HTTP request!");
         return;
     }
-    form.url.value = http.line['url'];
-    form.method.value = http.line['method'];
-    form.params.value = http.rawBody;
-    form.header.value = http.rawHeader;
+    form.url = http.line['url'];
+    form.method = http.line['method'];
+    form.version = http.line['version'];
+    form.params = http.rawBody;
+    form.header = http.rawHeader;
     if (typeof http.header['Content-Type'] !== 'undefined') {
-        if (enctypes[http.header['Content-Type'][0]]) form.enctype.value = http.header['Content-Type'][0];
+        if (enctypes[http.header['Content-Type'][0]]) form.enctype = http.header['Content-Type'][0];
         else {
-            form.enctype.value = "other";
-            form.enctypeother.value = http.header['Content-Type'][0];
+            form.enctype = "other";
+            form.enctypeother = http.header['Content-Type'][0];
         }
         if (triggerEnctype() === "multipart/form-data") detectBoundary();
     }
@@ -230,7 +292,7 @@ function downloadHTML() {
         errorMsg("No downloadable HTML! generate form!");
         return;
     }
-    const title = form.title.value;
+    const title = form.title;
     const content = func.generateHTML(title, nh.innerText);
 
     const mimeType = 'text/plain';

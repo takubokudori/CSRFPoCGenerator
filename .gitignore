@@ -10,4 +10,5 @@
 !/css/*
 !/scss/
 !/scss/*
+!PoCgenerator2.html
 !tsconfig.json
