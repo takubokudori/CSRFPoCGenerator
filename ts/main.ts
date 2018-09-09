@@ -61,6 +61,10 @@ class form {
         return form.isAutoSubmit();
     }
 
+    static get specifiable() {
+        return form.isSpecifiable();
+    }
+
     static get httprequest(): string {
         return form.getHTTPRequest();
     }
@@ -246,11 +250,11 @@ function analyzeRequest() {
         errorMsg("failed to parse HTTP request!");
         return;
     }
-    form.url = http.line['url'];
-    form.method = http.line['method'];
-    form.version = http.line['version'];
-    form.params = http.rawBody;
-    form.header = http.rawHeader;
+    form.form.url.value = http.line['url'];
+    form.form.method.value = http.line['method'];
+    form.form.version.value = http.line['version'];
+    form.form.body.value = http.rawBody;
+    form.form.header.value = http.rawHeader;
     if (typeof http.header['Content-Type'] !== 'undefined') {
         if (enctypes[http.header['Content-Type'][0]]) form.enctype = http.header['Content-Type'][0];
         else {

@@ -19,6 +19,12 @@ class HTTPRequest {
 
     constructor(httpRequest: string = "") {
         this.success_ = false;
+        this.rawLine_ = "";
+        this.rawHeader_ = "";
+        this.rawBody_ = "";
+        this.line_ = {};
+        this.header_ = {};
+        this.body_ = [];
         if (httpRequest === "") return; // empty request
         this.analyzeHTTPRequest(httpRequest);
     }
@@ -137,7 +143,6 @@ class HTTPRequest {
     }
 
     static analyzeMultipartParams(params: string, boundary: string) {
-        if (typeof params !== 'string' || params === '') return [];
         let ret = [];
         let h;
         let paramArr = params.split('--' + boundary);
@@ -151,7 +156,6 @@ class HTTPRequest {
     }
 
     static analyzeParams(params: string): string[] {
-        if (typeof params !== 'string' || params === '') return [];
         const param = params.split("&");
         const dict = [];
         for (const i in param) {
