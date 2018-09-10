@@ -65,7 +65,7 @@ class HTTPRequest {
     static buildLine(line: { [key: string]: string }): string {
         if (!line['method']) line['method'] = 'POST';
         if (!line['version']) line['version'] = 'HTTP/1.1';
-        return `${line['url']} ${line['method']} ${line['version']}`;
+        return `${line['method']} ${line['url']} ${line['version']}`;
     }
 
     static analyzeURL(url: string): { [key: string]: any } {
@@ -76,7 +76,7 @@ class HTTPRequest {
         };
     }
 
-    static analyzeHeaderOption(headerValue: string): string[] {
+    static analyzeHeaderOption(headerValue: string): any[] {
         let v = headerValue.split('; ');
         const ret = [];
         for (let i = 0; i < v.length; i++) {
@@ -87,7 +87,7 @@ class HTTPRequest {
         return ret;
     }
 
-    static analyzeHeader_(rawHeader: string): { [key: string]: string[] } {
+    static analyzeHeader_(rawHeader: string): { [key: string]: any[] } {
         let header = rawHeader.split(/\r\n|\n/);
         const ret = {
             'custom': [], // custom headers
@@ -113,8 +113,40 @@ class HTTPRequest {
         return true;
     }
 
-    static buildHeader(header: { [key: string]: string[] }): string {
-        return "";
+    static buildHeaderOption(headerValue: any[] | string): string {
+        if (typeof headerValue === 'string') return headerValue;
+        let ret = '';
+        for (let i = 0; i < headerValue.length; i++) {
+            if (ret !== '') ret += '; ';
+            if (typeof headerValue[i] === 'string') {
+                ret += headerValue[i];
+            } else {
+                ret += headerValue[i].join("=");
+            }
+        }
+        return ret;
+
+    }
+
+
+    static buildHeader(header: { [key: string]: [] }): string {
+        let ret = "";
+        for (let i in header) {
+            if (ret !== '') ret += '\n';
+            if (i === 'custom') {
+                let q = '';
+                for (let j in header[i]) {
+                    if (q !== '') q += '\n';
+                    if (header[i].hasOwnProperty(j)) {
+                        q += header[i][j][0] + ": " + this.buildHeaderOption(header[i][j][1]);
+                    }
+                }
+                ret += q;
+            } else {
+                ret += i + ": " + this.buildHeaderOption(header[i]);
+            }
+        }
+        return ret;
     }
 
     public analyzeHTTPBody(rawBody: string, contentType: string[] = []): boolean {
@@ -164,6 +196,7 @@ class HTTPRequest {
         return dict; // dict[0][0]=name dict[0][1]=value
     }
 
+
     get rawHeader(): string {
         return this.rawHeader_;
     }
@@ -178,6 +211,11 @@ class HTTPRequest {
 
     get header(): {} {
         return this.header_;
+    }
+
+    get enctype(): [] {
+        if (typeof this.header_['Content-Type'] === 'undefined') return [];
+        return this.header_['Content-Type'];
     }
 
     get body(): [] {

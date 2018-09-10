@@ -16,7 +16,17 @@ $prefixes: '', -moz-, -ms-, -webkit-;
   visibility: hidden;
 }
 
+.error-msg {
+  color: red;
+}
+
 .container {
   @include vprefix(display, flex);
-  width: 50%
+  .input-area {
+    width: 50%
+  }
+
+  .edit-area {
+    width: 50%;
+  }
 }

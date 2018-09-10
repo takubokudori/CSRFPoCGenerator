@@ -60,7 +60,7 @@ var HTTPRequest = /** @class */ (function () {
             line['method'] = 'POST';
         if (!line['version'])
             line['version'] = 'HTTP/1.1';
-        return line['url'] + " " + line['method'] + " " + line['version'];
+        return line['method'] + " " + line['url'] + " " + line['version'];
     };
     HTTPRequest.analyzeURL = function (url) {
         var a = HTTPRequest.separate_(url, "?");
@@ -108,8 +108,43 @@ var HTTPRequest = /** @class */ (function () {
         this.header_ = HTTPRequest.analyzeHeader_(rawHeader);
         return true;
     };
+    HTTPRequest.buildHeaderOption = function (headerValue) {
+        if (typeof headerValue === 'string')
+            return headerValue;
+        var ret = '';
+        for (var i = 0; i < headerValue.length; i++) {
+            if (ret !== '')
+                ret += '; ';
+            if (typeof headerValue[i] === 'string') {
+                ret += headerValue[i];
+            }
+            else {
+                ret += headerValue[i].join("=");
+            }
+        }
+        return ret;
+    };
     HTTPRequest.buildHeader = function (header) {
-        return "";
+        var ret = "";
+        for (var i in header) {
+            if (ret !== '')
+                ret += '\n';
+            if (i === 'custom') {
+                var q = '';
+                for (var j in header[i]) {
+                    if (q !== '')
+                        q += '\n';
+                    if (header[i].hasOwnProperty(j)) {
+                        q += header[i][j][0] + ": " + this.buildHeaderOption(header[i][j][1]);
+                    }
+                }
+                ret += q;
+            }
+            else {
+                ret += i + ": " + this.buildHeaderOption(header[i]);
+            }
+        }
+        return ret;
     };
     HTTPRequest.prototype.analyzeHTTPBody = function (rawBody, contentType) {
         if (contentType === void 0) { contentType = []; }
@@ -179,6 +214,15 @@ var HTTPRequest = /** @class */ (function () {
     Object.defineProperty(HTTPRequest.prototype, "header", {
         get: function () {
             return this.header_;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(HTTPRequest.prototype, "enctype", {
+        get: function () {
+            if (typeof this.header_['Content-Type'] === 'undefined')
+                return [];
+            return this.header_['Content-Type'];
         },
         enumerable: true,
         configurable: true

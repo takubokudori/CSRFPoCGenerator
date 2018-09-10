@@ -1,13 +1,17 @@
 .hide {
-    visibility: hidden;
-}
+  visibility: hidden; }
+
+.error-msg {
+  color: red; }
 
 .container {
-    display: flex;
-    display: -moz-flex;
-    display: -ms-flex;
-    display: -webkit-flex;
-    width: 50%;
-}
+  display: flex;
+  display: -moz-flex;
+  display: -ms-flex;
+  display: -webkit-flex; }
+  .container .input-area {
+    width: 50%; }
+  .container .edit-area {
+    width: 50%; }
 
 /*# sourceMappingURL=main.css.map */
