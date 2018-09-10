@@ -59,6 +59,7 @@ function fullEscapeHTML(str, withoutPrintable = false) {
 
 /**
  * "abc" -> "String.fromCharCode(97,98,99)"
+ * for sending binary files.
  */
 function toFromCharCodes(str) {
     if (typeof str !== 'string') return str;

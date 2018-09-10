@@ -183,7 +183,7 @@ function generatePoC(isSubmit) {
     analyzeLine();
     analyzeHeader();
     analyzeBody();
-    var success = func.generate();
+    var success = func.generate(http);
     if (success && isSubmit)
         func.send();
 }
@@ -270,10 +270,10 @@ function analyzeRequest() {
     form.form.header.value = http.rawHeader;
     if (typeof http.header['Content-Type'] !== 'undefined') {
         if (enctypes[http.header['Content-Type'][0]])
-            form.enctype = http.header['Content-Type'][0];
+            form.form.enctype.value = http.header['Content-Type'][0];
         else {
-            form.enctype = "other";
-            form.enctypeother = http.header['Content-Type'][0];
+            form.form.enctype.value = "other";
+            form.form.enctypeother.value = http.header['Content-Type'][0];
         }
         if (triggerEnctype() === "multipart/form-data")
             detectBoundary();
