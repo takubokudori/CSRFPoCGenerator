@@ -12,7 +12,7 @@ class form {
     }
 
     static isSpecifiable() {
-        return form.specifiable.checked;
+        return this.form.specifiable.checked;
     }
 
     static getHTTPRequest(): string {

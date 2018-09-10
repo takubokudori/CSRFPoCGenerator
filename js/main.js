@@ -9,7 +9,7 @@ var form = /** @class */ (function () {
         return this.form.autosubmit.checked;
     };
     form.isSpecifiable = function () {
-        return form.specifiable.checked;
+        return this.form.specifiable.checked;
     };
     form.getHTTPRequest = function () {
         return this.form.httprequest.value;
