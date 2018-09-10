@@ -1,9 +1,9 @@
 var formfunc = {
     generate: function (httprequest) {
-        var ezhtml = "";
         var req = httprequest.line;
         if (req === false)
             return false;
+        var ezhtml = "";
         ezhtml += "<form target=\"dummyfrm\" name=\"evilform\" action=\"" + req['url'] + "\" method=\"" + req['method'] + "\" enctype=\"" + req['enctype'] + "\">\n";
         var params = httprequest.body;
         for (var i = 0; i < params.length; i++) {
@@ -19,9 +19,9 @@ var formfunc = {
         var content = getHTMLheader(title) + "\n<body" + ((form.isAutoSubmit()) ? ' onload="csrfSubmit();"' : '') + ">\n" + bodyhtml + ((!form.isAutoSubmit()) ? '<button onclick="csrfSubmit();">submit</button>' : '') + "\n" + this.generateSendFunction() + "\n<p>" + title + "</p>\n" + getHTMLfooter() + "\n";
         return content;
     },
-    send: function () {
-        var req = getRequest();
-        document.getElementById("stat").innerHTML += "<p>" + new Date().toLocaleString() + " Request sent.</p><p>" + escapeHTML(req['url']) + "</p><p>" + escapeHTML(req['params']) + "</p><hr />";
+    send: function (httprequest) {
+        var req = httprequest;
+        document.getElementById("stat").innerHTML += "<p>" + new Date().toLocaleString() + " Request sent.</p><p>" + escapeHTML(req.line['url']) + "</p><p>" + escapeHTML(req.rawBody) + "</p><hr />";
         var submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
         submit();
         return true;
@@ -35,7 +35,15 @@ var xhrfunc = {
     generate: function (httprequest) {
         var req = httprequest.line;
         var enctype = HTTPRequest.buildHeaderOption(httprequest.enctype);
-        var ezhtml = "function csrfSubmit(){\nlet xhr=new XMLHttpRequest();\nxhr.open('" + req['method'] + "','" + req['url'] + "');\nxhr.withCredentials = true;\nxhr.setRequestHeader('Content-Type','" + enctype + "');\nxhr.send('" + escapeJavascript(form.getBody()) + "');\n}\n";
+        var headers = httprequest.header;
+        var ezhtml = "function csrfSubmit(){\nlet xhr=new XMLHttpRequest();\nxhr.open('" + req['method'] + "','" + req['url'] + "');\nxhr.withCredentials = true;\n";
+        var hc = headers['custom'];
+        for (var i = 0; i < hc.length; i++) {
+            ezhtml += "xhr.setRequestHeader('" + hc[i][0] + "','" + HTTPRequest.buildHeaderOption(hc[i][1]) + "');\n";
+        }
+        if (enctype !== '')
+            ezhtml += "xhr.setRequestHeader('Content-Type','" + enctype + "')\n        ";
+        ezhtml += "xhr.send('" + escapeJavascript(form.getBody()) + "');\n}\n";
         setEvilTextContent(ezhtml, true);
         setEvilHTMLcontent(ezhtml);
         return true;

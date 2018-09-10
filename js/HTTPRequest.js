@@ -190,6 +190,15 @@ var HTTPRequest = /** @class */ (function () {
         }
         return dict; // dict[0][0]=name dict[0][1]=value
     };
+    HTTPRequest.buildBody = function (body) {
+        var ret = "";
+        for (var i = 0; i < body.length; i++) {
+            if (ret !== '')
+                ret += "&";
+            ret += body[0] + "=" + body[1];
+        }
+        return ret;
+    };
     Object.defineProperty(HTTPRequest.prototype, "rawHeader", {
         get: function () {
             return this.rawHeader_;
@@ -255,7 +264,6 @@ var HTTPRequest = /** @class */ (function () {
         enumerable: true,
         configurable: true
     });
-    // TODO: inherit this
     HTTPRequest.prototype.renderOperationHTML = function () {
         var content = "";
         for (var i in this.body_) {

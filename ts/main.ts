@@ -142,7 +142,7 @@ function triggerAuto(): void {
 }
 
 function triggerEnctype() {
-    const enctype = form.getEnctype();
+    const enctype = form.form.enctype.value; // get raw enctype
     if (enctype === "multipart/form-data") {
         document.getElementById("div-boundary").style.visibility = "visible";
     } else {
@@ -162,34 +162,7 @@ function generatePoC(isSubmit): void {
     analyzeHeader();
     analyzeBody();
     const success = func.generate(http);
-    if (success && isSubmit) func.send();
-}
-
-function getRequest(): {} {
-    const url = form.getURL();
-    if (url === "") {
-        errorMsg("URL is empty!");
-        return false;
-    }
-    const method = form.getMethod();
-    if (method === "") {
-        errorMsg("method is empty!");
-        return false;
-    }
-    const enctype = form.getEnctype();
-    if (enctype === "") {
-        errorMsg("enctype is empty!");
-        return false;
-    }
-    const params = form.getBody();
-    const boundary = form.boundary;
-    return {
-        'url': url,
-        'method': method,
-        'enctype': enctype,
-        'params': params,
-        'boundary': boundary
-    };
+    if (success && isSubmit) func.send(http);
 }
 
 const validProtocol = {
@@ -212,7 +185,7 @@ function detectBoundary() {
     for (let i = pm.length - 1; i >= 0; i--) {
         k = pm[i].match(/^--[0-9a-zA-Z-]+--$/g);
         if (k != null && k.length === 1) {
-            form.boundary = k[0].slice(2, k.length - 3);
+            form.form.boundary.value = k[0].slice(2, k.length - 3);
             return;
         }
     }
@@ -220,7 +193,7 @@ function detectBoundary() {
 }
 
 function sendPoC() {
-    func.send();
+    func.send(http);
 }
 
 function analyzeLine() {
