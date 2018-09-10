@@ -31,7 +31,7 @@ const formfunc = {
     generateHTML(title: string, bodyhtml): string {
         let content: string =
             `${getHTMLheader(title)}
-<body${(form.isAutoSubmit()) ? ' onload="csrfSubmit();' : ''}>
+<body${(form.isAutoSubmit()) ? ' onload="csrfSubmit();"' : ''}>
 ${bodyhtml}${(!form.isAutoSubmit()) ? '<button onclick="csrfSubmit();">submit</button>' : ''}
 ${this.generateSendFunction()}
 <p>${title}</p>
@@ -81,9 +81,8 @@ xhr.send('${escapeJavascript(form.getBody())}');
     generateHTML: function (title: string, bodyhtml: string) {
         let content: string =
             `${getHTMLheader(title)}
-<body${(form.isAutoSubmit()) ? ' onload="csrfSubmit();' : ''}>
+<body${(form.isAutoSubmit()) ? ' onload="csrfSubmit();"' : ''}>
 ${bodyhtml}${(!form.isAutoSubmit()) ? '<button onclick="csrfSubmit();">submit</button>' : ''}
-${this.generateSendFunction()}
 <p>${title}</p>
 ${getHTMLfooter()}
 `;

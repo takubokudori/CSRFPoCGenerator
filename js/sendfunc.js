@@ -16,7 +16,7 @@ var formfunc = {
         return true;
     },
     generateHTML: function (title, bodyhtml) {
-        var content = getHTMLheader(title) + "\n<body" + ((form.isAutoSubmit()) ? ' onload="csrfSubmit();' : '') + ">\n" + bodyhtml + ((!form.isAutoSubmit()) ? '<button onclick="csrfSubmit();">submit</button>' : '') + "\n" + this.generateSendFunction() + "\n<p>" + title + "</p>\n" + getHTMLfooter() + "\n";
+        var content = getHTMLheader(title) + "\n<body" + ((form.isAutoSubmit()) ? ' onload="csrfSubmit();"' : '') + ">\n" + bodyhtml + ((!form.isAutoSubmit()) ? '<button onclick="csrfSubmit();">submit</button>' : '') + "\n" + this.generateSendFunction() + "\n<p>" + title + "</p>\n" + getHTMLfooter() + "\n";
         return content;
     },
     send: function () {
@@ -41,7 +41,7 @@ var xhrfunc = {
         return true;
     },
     generateHTML: function (title, bodyhtml) {
-        var content = getHTMLheader(title) + "\n<body" + ((form.isAutoSubmit()) ? ' onload="csrfSubmit();' : '') + ">\n" + bodyhtml + ((!form.isAutoSubmit()) ? '<button onclick="csrfSubmit();">submit</button>' : '') + "\n" + this.generateSendFunction() + "\n<p>" + title + "</p>\n" + getHTMLfooter() + "\n";
+        var content = getHTMLheader(title) + "\n<body" + ((form.isAutoSubmit()) ? ' onload="csrfSubmit();"' : '') + ">\n" + bodyhtml + ((!form.isAutoSubmit()) ? '<button onclick="csrfSubmit();">submit</button>' : '') + "\n<p>" + title + "</p>\n" + getHTMLfooter() + "\n";
         return content;
     },
     send: function () {
