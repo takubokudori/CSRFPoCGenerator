@@ -161,6 +161,7 @@ class HTTPRequest {
         return true;
     }
 
+
     public static getBoundary(contentType: string[]): string {
         let boundary = "";
         for (let i in contentType) {
@@ -196,6 +197,15 @@ class HTTPRequest {
         return dict; // dict[0][0]=name dict[0][1]=value
     }
 
+    public static buildBody(body: string[]): string {
+        let ret = "";
+        for (let i = 0; i < body.length; i++) {
+            if (ret !== '') ret += "&";
+            ret += body[0] + "=" + body[1];
+        }
+        return ret;
+
+    }
 
     get rawHeader(): string {
         return this.rawHeader_;
@@ -234,7 +244,6 @@ class HTTPRequest {
         return this.success_;
     }
 
-    // TODO: inherit this
     renderOperationHTML() {
         let content = "";
         for (let i in this.body_) {

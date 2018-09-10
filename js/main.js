@@ -163,7 +163,7 @@ function triggerAuto() {
     }
 }
 function triggerEnctype() {
-    var enctype = form.getEnctype();
+    var enctype = form.form.enctype.value; // get raw enctype
     if (enctype === "multipart/form-data") {
         document.getElementById("div-boundary").style.visibility = "visible";
     }
@@ -185,33 +185,7 @@ function generatePoC(isSubmit) {
     analyzeBody();
     var success = func.generate(http);
     if (success && isSubmit)
-        func.send();
-}
-function getRequest() {
-    var url = form.getURL();
-    if (url === "") {
-        errorMsg("URL is empty!");
-        return false;
-    }
-    var method = form.getMethod();
-    if (method === "") {
-        errorMsg("method is empty!");
-        return false;
-    }
-    var enctype = form.getEnctype();
-    if (enctype === "") {
-        errorMsg("enctype is empty!");
-        return false;
-    }
-    var params = form.getBody();
-    var boundary = form.boundary;
-    return {
-        'url': url,
-        'method': method,
-        'enctype': enctype,
-        'params': params,
-        'boundary': boundary
-    };
+        func.send(http);
 }
 var validProtocol = {
     'http': 1,
@@ -230,14 +204,14 @@ function detectBoundary() {
     for (var i = pm.length - 1; i >= 0; i--) {
         k = pm[i].match(/^--[0-9a-zA-Z-]+--$/g);
         if (k != null && k.length === 1) {
-            form.boundary = k[0].slice(2, k.length - 3);
+            form.form.boundary.value = k[0].slice(2, k.length - 3);
             return;
         }
     }
     errorMsg("failed to detect boundary!Is params perfect format?");
 }
 function sendPoC() {
-    func.send();
+    func.send(http);
 }
 function analyzeLine() {
     http.analyzeLine(HTTPRequest.buildLine({

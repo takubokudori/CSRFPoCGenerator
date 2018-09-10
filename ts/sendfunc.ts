@@ -10,9 +10,9 @@ interface sendfunc {
 
 const formfunc = {
     generate(httprequest: HTTPRequest): boolean {
-        let ezhtml: string = "";
         const req = httprequest.line;
         if (req === false) return false;
+        let ezhtml: string = "";
         ezhtml += `<form target="dummyfrm" name="evilform" action="${req['url']}" method="${req['method']}" enctype="${req['enctype']}">
 `;
         const params = httprequest.body;
@@ -40,9 +40,9 @@ ${getHTMLfooter()}
         return content;
     },
 
-    send(): boolean {
-        const req = getRequest();
-        document.getElementById("stat").innerHTML += `<p>${new Date().toLocaleString()} Request sent.</p><p>${escapeHTML(req['url'])}</p><p>${escapeHTML(req['params'])}</p><hr />`;
+    send(httprequest: HTTPRequest): boolean {
+        const req = httprequest;
+        document.getElementById("stat").innerHTML += `<p>${new Date().toLocaleString()} Request sent.</p><p>${escapeHTML(req.line['url'])}</p><p>${escapeHTML(req.rawBody)}</p><hr />`;
         const submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
         submit();
         return true;
@@ -64,13 +64,21 @@ const xhrfunc = {
     generate: function (httprequest: HTTPRequest) {
         const req = httprequest.line;
         const enctype: string = HTTPRequest.buildHeaderOption(httprequest.enctype);
+        const headers = httprequest.header;
         let ezhtml: string =
             `function csrfSubmit(){
 let xhr=new XMLHttpRequest();
 xhr.open('${req['method']}','${req['url']}');
 xhr.withCredentials = true;
-xhr.setRequestHeader('Content-Type','${enctype}');
-xhr.send('${escapeJavascript(form.getBody())}');
+`;
+        const hc = headers['custom'];
+        for (let i = 0; i < hc.length; i++) {
+            ezhtml += `xhr.setRequestHeader('${hc[i][0]}','${HTTPRequest.buildHeaderOption(hc[i][1])}');
+`;
+        }
+        if (enctype !== '') ezhtml += `xhr.setRequestHeader('Content-Type','${enctype}')
+        `;
+        ezhtml += `xhr.send('${escapeJavascript(form.getBody())}');
 }
 `;
         setEvilTextContent(ezhtml, true);
