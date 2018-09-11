@@ -86,6 +86,8 @@ var HTTPRequest = /** @class */ (function () {
         var ret = {
             'custom': [],
         };
+        if (rawHeader === '')
+            return ret;
         for (var i = 0; i < header.length; i++) {
             var h = HTTPRequest.separate_(header[i], ':');
             if (h.length === 2) {
@@ -184,11 +186,13 @@ var HTTPRequest = /** @class */ (function () {
     };
     HTTPRequest.analyzeParams = function (params) {
         var param = params.split("&");
-        var dict = [];
+        var ret = [];
+        if (params === '')
+            return ret;
         for (var i in param) {
-            dict.push(param[i].split("="));
+            ret.push(param[i].split("="));
         }
-        return dict; // dict[0][0]=name dict[0][1]=value
+        return ret; // dict[0][0]=name dict[0][1]=value
     };
     HTTPRequest.buildBody = function (body) {
         var ret = "";

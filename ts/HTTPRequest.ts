@@ -92,6 +92,7 @@ class HTTPRequest {
         const ret = {
             'custom': [], // custom headers
         };
+        if (rawHeader === '') return ret;
         for (let i = 0; i < header.length; i++) {
             const h = HTTPRequest.separate_(header[i], ':');
             if (h.length === 2) {
@@ -190,11 +191,12 @@ class HTTPRequest {
 
     static analyzeParams(params: string): string[] {
         const param = params.split("&");
-        const dict = [];
+        const ret = [];
+        if (params === '') return ret;
         for (const i in param) {
-            dict.push(param[i].split("="));
+            ret.push(param[i].split("="));
         }
-        return dict; // dict[0][0]=name dict[0][1]=value
+        return ret; // dict[0][0]=name dict[0][1]=value
     }
 
     public static buildBody(body: string[]): string {
