@@ -87,6 +87,14 @@ class HTTPRequest {
         return ret;
     }
 
+    private static isForbiddenHeader(name: string): boolean {
+        if (forbiddenHeader[name]) return true;
+        for (let i = 0; forbiddenHeaderRegex.length; i++) {
+            if (forbiddenHeaderRegex[i].test(name)) return true;
+        }
+        return false;
+    }
+
     static analyzeHeader_(rawHeader: string): { [key: string]: any[] } {
         let header = rawHeader.split(/\r\n|\n/);
         const ret = {
@@ -98,7 +106,7 @@ class HTTPRequest {
             if (h.length === 2) {
                 h[0] = h[0].trim(); // header name
                 h[1] = h[1].trim(); // value
-                if (!forbiddenHeader[h[0]]) ret['custom'].push(h); // custom header
+                if (!this.isForbiddenHeader(h[0])) ret['custom'].push(h); // custom header
                 else { // forbidden header
                     if (h[0] === 'Referer') ret[h[0]] = h[1]; // Referer: http://localhost?a=b etc...
                     else ret[h[0]] = HTTPRequest.analyzeHeaderOption(h[1]);
@@ -280,6 +288,12 @@ const forbiddenHeader: { [key: string]: string } = {
     'Upgrade': '1',
     'Via': '1'
 };
+
+const forbiddenHeaderRegex = [
+    /^Sec-.*$/,
+    /^Proxy-.*$/
+];
+
 const HTMLrender = {
     inputSet: function (name, value, i, prefix = '') {
         let content = '';

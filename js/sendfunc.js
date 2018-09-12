@@ -22,6 +22,7 @@ var formfunc = {
     send: function (httprequest) {
         var req = httprequest;
         document.getElementById("stat").innerHTML += "<p>" + new Date().toLocaleString() + " Request sent.</p><p>" + escapeHTML(req.line['url']) + "</p><p>" + escapeHTML(req.rawBody) + "</p><hr />";
+        // @ts-ignore
         var submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
         submit();
         return true;
@@ -54,6 +55,7 @@ var xhrfunc = {
     },
     send: function () {
         eval(document.getElementById("evilzone").textContent);
+        // @ts-ignore
         csrfSubmit();
     }
 };

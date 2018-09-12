@@ -81,6 +81,15 @@ var HTTPRequest = /** @class */ (function () {
         }
         return ret;
     };
+    HTTPRequest.isForbiddenHeader = function (name) {
+        if (forbiddenHeader[name])
+            return true;
+        for (var i = 0; forbiddenHeaderRegex.length; i++) {
+            if (forbiddenHeaderRegex[i].test(name))
+                return true;
+        }
+        return false;
+    };
     HTTPRequest.analyzeHeader_ = function (rawHeader) {
         var header = rawHeader.split(/\r\n|\n/);
         var ret = {
@@ -93,7 +102,7 @@ var HTTPRequest = /** @class */ (function () {
             if (h.length === 2) {
                 h[0] = h[0].trim(); // header name
                 h[1] = h[1].trim(); // value
-                if (!forbiddenHeader[h[0]])
+                if (!this.isForbiddenHeader(h[0]))
                     ret['custom'].push(h); // custom header
                 else { // forbidden header
                     if (h[0] === 'Referer')
@@ -302,6 +311,10 @@ var forbiddenHeader = {
     'Upgrade': '1',
     'Via': '1'
 };
+var forbiddenHeaderRegex = [
+    /^Sec-.*$/,
+    /^Proxy-.*$/
+];
 var HTMLrender = {
     inputSet: function (name, value, i, prefix) {
         if (prefix === void 0) { prefix = ''; }
