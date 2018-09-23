@@ -66,6 +66,7 @@ const xhrfunc = {
         const req = httprequest.line;
         const enctype: string = HTTPRequest.buildHeaderOption(httprequest.enctype);
         const headers = httprequest.header;
+        const sendMessage = (form.isFromCharCode() ? toFromCharCodes(form.getBody()) : "'" + escapeJavascript(form.getBody()) + "'");
         let ezhtml: string =
             `function csrfSubmit(){
 let xhr=new XMLHttpRequest();
@@ -79,7 +80,7 @@ xhr.withCredentials = true;
         }
         if (enctype !== '') ezhtml += `xhr.setRequestHeader('Content-Type','${enctype}')
         `;
-        ezhtml += `xhr.send('${escapeJavascript(form.getBody())}');
+        ezhtml += `xhr.send(${sendMessage});
 }
 `;
         setEvilTextContent(ezhtml, true);

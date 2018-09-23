@@ -89,7 +89,7 @@ class HTTPRequest {
 
     private static isForbiddenHeader(name: string): boolean {
         if (forbiddenHeader[name]) return true;
-        for (let i = 0; forbiddenHeaderRegex.length; i++) {
+        for (let i = 0; i < forbiddenHeaderRegex.length; i++) {
             if (forbiddenHeaderRegex[i].test(name)) return true;
         }
         return false;

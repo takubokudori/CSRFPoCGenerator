@@ -15,6 +15,10 @@ class form {
         return this.form.specifiable.checked;
     }
 
+    static isFromCharCode() {
+        return this.form.fcc.checked;
+    }
+
     static getHTTPRequest(): string {
         return this.form.httprequest.value;
     }
@@ -51,6 +55,10 @@ class form {
 
     static getTitle(): string {
         return this.form.title.value;
+    }
+
+    static get fcc() {
+        return form.isFromCharCode();
     }
 
     static get sendmethod(): string {
@@ -134,26 +142,39 @@ function triggerFunc(): void {
 
 function triggerAuto(): void {
     const as = form.isAutoSubmit();
-    if (as) {
-        document.getElementById("div-specifiable").style.visibility = "hidden";
-    } else {
-        document.getElementById("div-specifiable").style.visibility = "visible";
-    }
+    chVisible(document.getElementById("div-specifiable"), !form.isAutoSubmit());
+    // if (as) {
+    //     document.getElementById("div-specifiable").style.visibility = "hidden";
+    // } else {
+    //     document.getElementById("div-specifiable").style.visibility = "visible";
+    // }
 }
 
 function triggerEnctype() {
     const enctype = form.form.enctype.value; // get raw enctype
-    if (enctype === "multipart/form-data") {
-        document.getElementById("div-boundary").style.visibility = "visible";
-    } else {
-        document.getElementById("div-boundary").style.visibility = "hidden";
-    }
-    if (enctype === "other") {
-        document.getElementById("span-enctypeother").style.visibility = "visible";
-    } else {
-        document.getElementById("span-enctypeother").style.visibility = "hidden";
-    }
+    chVisible(document.getElementById("div-boundary"), enctype === "multipart/form-data");
+    // if (enctype === "multipart/form-data") {
+    //     document.getElementById("div-boundary").style.visibility = "visible";
+    // } else {
+    //     document.getElementById("div-boundary").style.visibility = "hidden";
+    // }
+    chVisible(document.getElementById("span-enctypeother"), enctype === "other");
+    // if (enctype === "other") {
+    //     document.getElementById("span-enctypeother").style.visibility = "visible";
+    // } else {
+    //     document.getElementById("span-enctypeother").style.visibility = "hidden";
+    // }
     return enctype;
+}
+
+function chVisible(elem, isVisible: boolean = false, isDisplayStyle: boolean = false) {
+    if (isDisplayStyle) {
+        if (!isVisible) elem.style.visibility = "hidden";
+        else elem.style.visibility = "visible";
+    } else {
+        if (!isVisible) elem.style.display = "none";
+        else elem.style.display = "inline";
+    }
 }
 
 function generatePoC(isSubmit): void {
@@ -254,13 +275,18 @@ function executeDownload(name, content, mimeType) {
         a.click();
         document.body.removeChild(a);
     }
-    // else if (window.webkitURL && window.webkitURL.createObject) {
-    //     a.href = window.webkitURL.createObjectURL(blob);
-    //     a.click();
-    // }
-    // else {
-    //     window.open('data:' + mimeType + ';base64,' + window.Base64.encode(content), '_blank');
-    // }
+    else {
+        // @ts-ignore
+        if (window.webkitURL && window.webkitURL.createObject) {
+            // @ts-ignore
+            a.href = window.webkitURL.createObjectURL(blob);
+            a.click();
+        }
+        else {
+            // @ts-ignore
+            window.open('data:' + mimeType + ';base64,' + window.Base64.encode(content), '_blank');
+        }
+    }
 }
 
 function downloadHTML() {

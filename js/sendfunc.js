@@ -37,6 +37,7 @@ var xhrfunc = {
         var req = httprequest.line;
         var enctype = HTTPRequest.buildHeaderOption(httprequest.enctype);
         var headers = httprequest.header;
+        var sendMessage = (form.isFromCharCode() ? toFromCharCodes(form.getBody()) : "'" + escapeJavascript(form.getBody()) + "'");
         var ezhtml = "function csrfSubmit(){\nlet xhr=new XMLHttpRequest();\nxhr.open('" + req['method'] + "','" + req['url'] + "');\nxhr.withCredentials = true;\n";
         var hc = headers['custom'];
         for (var i = 0; i < hc.length; i++) {
@@ -44,7 +45,7 @@ var xhrfunc = {
         }
         if (enctype !== '')
             ezhtml += "xhr.setRequestHeader('Content-Type','" + enctype + "')\n        ";
-        ezhtml += "xhr.send('" + escapeJavascript(form.getBody()) + "');\n}\n";
+        ezhtml += "xhr.send(" + sendMessage + ");\n}\n";
         setEvilTextContent(ezhtml, true);
         setEvilHTMLcontent(ezhtml);
         return true;
