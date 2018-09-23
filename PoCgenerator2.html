@@ -49,8 +49,8 @@
 <form name="messageForm" method="POST">
     <div class="container">
         <div class="input-area">
-            <div>token check :
-                <input type="checkbox" name="tokencheck" checked title="token check">
+            <div>use fromCharCode:
+                <input type="checkbox" name="fcc" checked title="use fromCharCode">
             </div>
             <div>send :
                 <input type="radio" name="sendmethod" id="form-method" value="formfunc" onclick="triggerFunc();"
@@ -79,7 +79,16 @@
                 <input type="text" name="url" size="50" title="URL" placeholder="URL"/>
                 <input type="text" name="version" size="10" value="HTTP/1.1" title="version" placeholder="HTTP Version">
             </div>
-            <div><textarea name="header" rows="6" cols="40" title="header" placeholder="HTTP Header"></textarea></div>
+            <div class="hide">
+                <input type="text" name="rawline" size="60" value="" title="raw requst line"
+                       placeholder="POST http://example.com HTTP/1.1">
+            </div>
+            <div id="raw-header">
+                <textarea name="header" rows="6" cols="40" title="header" placeholder="HTTP Header"></textarea>
+            </div>
+            <div id="edit-header">
+
+            </div>
             <div>enctype: <select name="enctype" onchange="triggerEnctype();" title="enctype">
             </select><span class="hide" id="span-enctypeother">other:<input type="text" name="enctypeother" size="20"
                                                                             value=""
@@ -89,20 +98,16 @@
                                                                  title="boundary"/>
                 <button onclick="detectBoundary();return false;">detect boundary</button>
             </div>
-            <div>body:<br/>
+            <div id="raw-body">body:<br/>
                 <textarea name="body" rows="6" cols="60" title="body" placeholder="HTTP Body"></textarea><br/>
                 <button name="generate" onclick="generatePoC(true);return false;">generate and submit</button>
                 <button name="generate" onclick="generatePoC(false);return false;">generate only</button>
             </div>
+            <div class="hide" id="edit-body">
+
+            </div>
             <div>title:<input type="text" name="title" size="20" value="CSRF PoC" title="HTML title"/>
                 <button name="downloadhtml" onclick="generatePoC();downloadHTML();return false;">download HTML</button>
-            </div>
-        </div>
-        <div class="edit-area">
-            <div class="edit-line">Line:</div>
-            <div class="edit-header">Header:</div>
-            <div class="edit-body">Body:
-                <div id="param-operation"></div>
             </div>
         </div>
     </div>

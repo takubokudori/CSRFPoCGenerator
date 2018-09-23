@@ -84,7 +84,7 @@ var HTTPRequest = /** @class */ (function () {
     HTTPRequest.isForbiddenHeader = function (name) {
         if (forbiddenHeader[name])
             return true;
-        for (var i = 0; forbiddenHeaderRegex.length; i++) {
+        for (var i = 0; i < forbiddenHeaderRegex.length; i++) {
             if (forbiddenHeaderRegex[i].test(name))
                 return true;
         }

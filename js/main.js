@@ -11,6 +11,9 @@ var form = /** @class */ (function () {
     form.isSpecifiable = function () {
         return this.form.specifiable.checked;
     };
+    form.isFromCharCode = function () {
+        return this.form.fcc.checked;
+    };
     form.getHTTPRequest = function () {
         return this.form.httprequest.value;
     };
@@ -41,6 +44,13 @@ var form = /** @class */ (function () {
     form.getTitle = function () {
         return this.form.title.value;
     };
+    Object.defineProperty(form, "fcc", {
+        get: function () {
+            return form.isFromCharCode();
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(form, "sendmethod", {
         get: function () {
             return form.getSendMethod();
@@ -155,28 +165,49 @@ function triggerFunc() {
 }
 function triggerAuto() {
     var as = form.isAutoSubmit();
-    if (as) {
-        document.getElementById("div-specifiable").style.visibility = "hidden";
-    }
-    else {
-        document.getElementById("div-specifiable").style.visibility = "visible";
-    }
+    chVisible(document.getElementById("div-specifiable"), !form.isAutoSubmit());
+    // if (as) {
+    //     document.getElementById("div-specifiable").style.visibility = "hidden";
+    // } else {
+    //     document.getElementById("div-specifiable").style.visibility = "visible";
+    // }
 }
 function triggerEnctype() {
     var enctype = form.form.enctype.value; // get raw enctype
-    if (enctype === "multipart/form-data") {
-        document.getElementById("div-boundary").style.visibility = "visible";
-    }
-    else {
-        document.getElementById("div-boundary").style.visibility = "hidden";
-    }
-    if (enctype === "other") {
-        document.getElementById("span-enctypeother").style.visibility = "visible";
-    }
-    else {
-        document.getElementById("span-enctypeother").style.visibility = "hidden";
-    }
+    chVisible(document.getElementById("div-boundary"), enctype === "multipart/form-data");
+    // if (enctype === "multipart/form-data") {
+    //     document.getElementById("div-boundary").style.visibility = "visible";
+    // } else {
+    //     document.getElementById("div-boundary").style.visibility = "hidden";
+    // }
+    chVisible(document.getElementById("span-enctypeother"), enctype === "other");
+    // if (enctype === "other") {
+    //     document.getElementById("span-enctypeother").style.visibility = "visible";
+    // } else {
+    //     document.getElementById("span-enctypeother").style.visibility = "hidden";
+    // }
     return enctype;
+}
+
+function chVisible(elem, isVisible, isDisplayStyle) {
+    if (isVisible === void 0) {
+        isVisible = false;
+    }
+    if (isDisplayStyle === void 0) {
+        isDisplayStyle = false;
+    }
+    if (isDisplayStyle) {
+        if (!isVisible)
+            elem.style.visibility = "hidden";
+        else
+            elem.style.visibility = "visible";
+    }
+    else {
+        if (!isVisible)
+            elem.style.display = "none";
+        else
+            elem.style.display = "inline";
+    }
 }
 function generatePoC(isSubmit) {
     http = new HTTPRequest();
@@ -268,13 +299,18 @@ function executeDownload(name, content, mimeType) {
         a.click();
         document.body.removeChild(a);
     }
-    // else if (window.webkitURL && window.webkitURL.createObject) {
-    //     a.href = window.webkitURL.createObjectURL(blob);
-    //     a.click();
-    // }
-    // else {
-    //     window.open('data:' + mimeType + ';base64,' + window.Base64.encode(content), '_blank');
-    // }
+    else {
+        // @ts-ignore
+        if (window.webkitURL && window.webkitURL.createObject) {
+            // @ts-ignore
+            a.href = window.webkitURL.createObjectURL(blob);
+            a.click();
+        }
+        else {
+            // @ts-ignore
+            window.open('data:' + mimeType + ';base64,' + window.Base64.encode(content), '_blank');
+        }
+    }
 }
 function downloadHTML() {
     var nh = document.getElementById("nowhtml");

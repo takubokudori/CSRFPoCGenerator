@@ -13,7 +13,8 @@ $prefixes: '', -moz-, -ms-, -webkit-;
 }
 
 .hide {
-  visibility: hidden;
+  //visibility: hidden;
+  display: none;
 }
 
 .error-msg {
