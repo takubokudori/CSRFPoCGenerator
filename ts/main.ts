@@ -120,12 +120,12 @@ const enctypes = {
     "text/plain": 2
 };
 
-function errorMsg(msg) {
+function errorMsg(msg): void {
     if (typeof msg !== 'string') return msg;
     document.getElementById("errormsg").textContent = msg;
 }
 
-function setEvilHTMLcontent(ezhtml) {
+function setEvilHTMLContent(ezhtml): void {
     document.getElementById("evilzone").innerHTML = ezhtml;
 }
 
@@ -143,37 +143,32 @@ function triggerFunc(): void {
 function triggerAuto(): void {
     const as = form.isAutoSubmit();
     chVisible(document.getElementById("div-specifiable"), !form.isAutoSubmit());
-    // if (as) {
-    //     document.getElementById("div-specifiable").style.visibility = "hidden";
-    // } else {
-    //     document.getElementById("div-specifiable").style.visibility = "visible";
-    // }
 }
 
 function triggerEnctype() {
     const enctype = form.form.enctype.value; // get raw enctype
     chVisible(document.getElementById("div-boundary"), enctype === "multipart/form-data");
-    // if (enctype === "multipart/form-data") {
-    //     document.getElementById("div-boundary").style.visibility = "visible";
-    // } else {
-    //     document.getElementById("div-boundary").style.visibility = "hidden";
-    // }
     chVisible(document.getElementById("span-enctypeother"), enctype === "other");
-    // if (enctype === "other") {
-    //     document.getElementById("span-enctypeother").style.visibility = "visible";
-    // } else {
-    //     document.getElementById("span-enctypeother").style.visibility = "hidden";
-    // }
     return enctype;
 }
 
-function chVisible(elem, isVisible: boolean = false, isDisplayStyle: boolean = false) {
+function chVisible(elem, isVisible: boolean = false, isDisplayStyle: boolean = false): void {
     if (isDisplayStyle) {
         if (!isVisible) elem.style.visibility = "hidden";
         else elem.style.visibility = "visible";
     } else {
         if (!isVisible) elem.style.display = "none";
         else elem.style.display = "inline";
+    }
+}
+
+function switchVisible(elem, isDisplayStyle: boolean = false): void {
+    if (isDisplayStyle) {
+        if (elem.style.visibility === 'hidden') elem.style.visibility = "visible";
+        else elem.style.visibility = "hidden";
+    } else {
+        if (elem.style.display === 'none') elem.style.display = "inline";
+        else elem.style.display = "none";
     }
 }
 
@@ -192,14 +187,14 @@ const validProtocol = {
     'ftp': 1
 };
 
-function validateURL(url) {
+function validateURL(url): boolean {
     if (typeof url !== 'string') return false;
     const idx = url.indexOf(':');
     return (typeof validProtocol[url.substring(0, idx)]) !== 'undefined';
 
 }
 
-function detectBoundary() {
+function detectBoundary(): void {
     let pm: string[] = form.body.split(/\r\n|\n/);
 
     let k;
@@ -213,11 +208,11 @@ function detectBoundary() {
     errorMsg("failed to detect boundary!Is params perfect format?");
 }
 
-function sendPoC() {
+function sendPoC(): void {
     func.send(http);
 }
 
-function analyzeLine() {
+function analyzeLine(): void {
     http.analyzeLine(HTTPRequest.buildLine({
         'url': form.getURL(),
         'method': form.getMethod(),
@@ -225,15 +220,15 @@ function analyzeLine() {
     }));
 }
 
-function analyzeHeader() {
+function analyzeHeader(): void {
     http.analyzeHeader(form.header);
 }
 
-function analyzeBody() {
+function analyzeBody(): void {
     http.analyzeHTTPBody(form.body);
 }
 
-function analyzeRequest() {
+function analyzeRequest(): void {
     const req = form.httprequest;
     if (req === "") {
         errorMsg("Raw HTTP request is empty!");
@@ -257,10 +252,35 @@ function analyzeRequest() {
         }
         if (triggerEnctype() === "multipart/form-data") detectBoundary();
     }
-    document.getElementById("param-operation").innerHTML = http.renderOperationHTML();
+    generateEditBody(http);
 }
 
-function executeDownload(name, content, mimeType) {
+function switchLine() {
+    switchVisible(document.getElementById('raw-line'));
+    switchVisible(document.getElementById('edit-line'));
+}
+
+function switchHeader() {
+    switchVisible(document.getElementById('raw-header'));
+    switchVisible(document.getElementById('edit-header'));
+}
+
+function switchBody() {
+    switchVisible(document.getElementById('raw-body'));
+    switchVisible(document.getElementById('edit-body'));
+}
+
+function generateEditBody(http: HTTPRequest): string {
+    const b = http.body;
+    let content = "";
+    for (let i = 0; i < b.length; i++) {
+        content += HTMLRender.inputSet(b[i][0], b[i][1], i, 'body') + "<br />";
+    }
+    document.getElementById("edit-body").innerHTML = content;
+    return content;
+}
+
+function executeDownload(name, content, mimeType): void {
     const blob = new Blob([content], {type: mimeType});
 
     const a = document.createElement('a');
@@ -289,7 +309,7 @@ function executeDownload(name, content, mimeType) {
     }
 }
 
-function downloadHTML() {
+function downloadHTML(): void {
     const nh = document.getElementById("nowhtml");
     if (nh.textContent === "") {
         errorMsg("No downloadable HTML! generate form!");
@@ -306,7 +326,7 @@ function downloadHTML() {
 /**
  * @return {string}
  */
-function URLencode(str) {
+function URLencode(str): string {
     if (typeof str !== 'string') return str;
     return encodeURIComponent(str.replace(/\r?\n/g, "\r\n"));
 }
@@ -314,7 +334,7 @@ function URLencode(str) {
 /**
  * @return {string}
  */
-function URLdecode(str) {
+function URLdecode(str): string {
     if (typeof str !== 'string') return str;
     return decodeURIComponent(str.replace(/\+/g, '%20'));
 }

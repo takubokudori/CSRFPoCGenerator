@@ -7,10 +7,10 @@ var formfunc = {
         ezhtml += "<form target=\"dummyfrm\" name=\"evilform\" action=\"" + req['url'] + "\" method=\"" + req['method'] + "\" enctype=\"" + req['enctype'] + "\">\n";
         var params = httprequest.body;
         for (var i = 0; i < params.length; i++) {
-            ezhtml += HTMLrender.input(URLdecode(params[i][0]), URLdecode(params[i][1]), ((!form.isAutoSubmit() && form.isSpecifiable()) ? ("text") : ("hidden"))) + "\n";
+            ezhtml += HTMLRender.input(URLdecode(params[i][0]), URLdecode(params[i][1]), ((!form.isAutoSubmit() && form.isSpecifiable()) ? ("text") : ("hidden"))) + "\n";
         }
         ezhtml += "</form>\n<iframe src=\"x\" width=\"1\" height=\"1\" name=\"dummyfrm\" style=\"visibility:hidden\"></iframe>";
-        setEvilHTMLcontent(ezhtml);
+        setEvilHTMLContent(ezhtml);
         setEvilTextContent(ezhtml);
         errorMsg("");
         return true;
@@ -47,7 +47,7 @@ var xhrfunc = {
             ezhtml += "xhr.setRequestHeader('Content-Type','" + enctype + "')\n        ";
         ezhtml += "xhr.send(" + sendMessage + ");\n}\n";
         setEvilTextContent(ezhtml, true);
-        setEvilHTMLcontent(ezhtml);
+        setEvilHTMLContent(ezhtml);
         return true;
     },
     generateHTML: function (title, bodyhtml) {
