@@ -13,7 +13,7 @@ class HTTPRequest {
 
     static separate_(str: string, delimiter: string): string[] {
         if (typeof str !== 'string' || typeof delimiter !== 'string') return [];
-        const idx = str.indexOf(delimiter);
+        const idx: number = str.indexOf(delimiter);
         return [str.substring(0, idx), str.slice(idx + delimiter.length)];
     }
 
@@ -257,7 +257,7 @@ class HTTPRequest {
     renderOperationHTML() {
         let content = "";
         for (let i in this.body_) {
-            content += HTMLrender.inputSet(this.body_[i][0], this.body_[i][1], i, 'b') + '<br />';
+            content += HTMLRender.inputSet(this.body_[i][0], this.body_[i][1], i, 'b') + '<br />';
         }
         return content;
     }
@@ -294,20 +294,35 @@ const forbiddenHeaderRegex = [
     /^Proxy-.*$/
 ];
 
-const HTMLrender = {
-    inputSet: function (name, value, i, prefix = '') {
+const HTMLRender = {
+    inputSet: function (name: string, value: string, i, prefix: string = ''): string {
         let content = '';
-        content += HTMLrender.input(prefix + 'name[' + i + ']', name) + ":";
-        content += HTMLrender.input(prefix + 'value[' + i + ']', value) + "\n";
+        content += HTMLRender.select(`type[${i}]`, ['text', 'hidden', 'number', 'email']);
+        content += HTMLRender.input(prefix + 'name[' + i + ']', name) + ":";
+        content += HTMLRender.input(prefix + 'value[' + i + ']', value) + "\n";
         return content;
     },
 
-    input: function (name, value, type = 'text', isEscape = true) {
+    input: function (name: string, value: string, type: string = 'text', isEscape: boolean = true): string {
         if (isEscape) {
             name = escapeHTML(name);
             value = escapeHTML(value);
         }
         return `<input type="${type}" name="${name}" value="${value}" />`
+    },
+
+    select: function (name: string, optionValue: string[], isEscape: boolean = true, checkIdx: number = 0): string {
+        let content: string = `<select name="${name}" >` + '\n';
+        for (let i = 0; i < optionValue.length; i++) {
+            let k: string = (isEscape ? escapeHTML(optionValue[i]) : optionValue[i]);
+            content += HTMLRender.option(k, k, checkIdx === i) + '\n';
+        }
+        content += `</select>` + '\n';
+        return content;
+    },
+
+    option: function (value: string, inner: string, isSelected: boolean = false): string {
+        return `<option value=${value} ${(isSelected ? 'selected' : '')}>${inner}</option>`;
     }
 };
 

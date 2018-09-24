@@ -150,7 +150,7 @@ function errorMsg(msg) {
         return msg;
     document.getElementById("errormsg").textContent = msg;
 }
-function setEvilHTMLcontent(ezhtml) {
+function setEvilHTMLContent(ezhtml) {
     document.getElementById("evilzone").innerHTML = ezhtml;
 }
 function setEvilTextContent(ezhtml, isScript) {
@@ -166,36 +166,16 @@ function triggerFunc() {
 function triggerAuto() {
     var as = form.isAutoSubmit();
     chVisible(document.getElementById("div-specifiable"), !form.isAutoSubmit());
-    // if (as) {
-    //     document.getElementById("div-specifiable").style.visibility = "hidden";
-    // } else {
-    //     document.getElementById("div-specifiable").style.visibility = "visible";
-    // }
 }
 function triggerEnctype() {
     var enctype = form.form.enctype.value; // get raw enctype
     chVisible(document.getElementById("div-boundary"), enctype === "multipart/form-data");
-    // if (enctype === "multipart/form-data") {
-    //     document.getElementById("div-boundary").style.visibility = "visible";
-    // } else {
-    //     document.getElementById("div-boundary").style.visibility = "hidden";
-    // }
     chVisible(document.getElementById("span-enctypeother"), enctype === "other");
-    // if (enctype === "other") {
-    //     document.getElementById("span-enctypeother").style.visibility = "visible";
-    // } else {
-    //     document.getElementById("span-enctypeother").style.visibility = "hidden";
-    // }
     return enctype;
 }
-
 function chVisible(elem, isVisible, isDisplayStyle) {
-    if (isVisible === void 0) {
-        isVisible = false;
-    }
-    if (isDisplayStyle === void 0) {
-        isDisplayStyle = false;
-    }
+    if (isVisible === void 0) { isVisible = false; }
+    if (isDisplayStyle === void 0) { isDisplayStyle = false; }
     if (isDisplayStyle) {
         if (!isVisible)
             elem.style.visibility = "hidden";
@@ -207,6 +187,21 @@ function chVisible(elem, isVisible, isDisplayStyle) {
             elem.style.display = "none";
         else
             elem.style.display = "inline";
+    }
+}
+function switchVisible(elem, isDisplayStyle) {
+    if (isDisplayStyle === void 0) { isDisplayStyle = false; }
+    if (isDisplayStyle) {
+        if (elem.style.visibility === 'hidden')
+            elem.style.visibility = "visible";
+        else
+            elem.style.visibility = "hidden";
+    }
+    else {
+        if (elem.style.display === 'none')
+            elem.style.display = "inline";
+        else
+            elem.style.display = "none";
     }
 }
 function generatePoC(isSubmit) {
@@ -283,7 +278,28 @@ function analyzeRequest() {
         if (triggerEnctype() === "multipart/form-data")
             detectBoundary();
     }
-    document.getElementById("param-operation").innerHTML = http.renderOperationHTML();
+    generateEditBody(http);
+}
+function switchLine() {
+    switchVisible(document.getElementById('raw-line'));
+    switchVisible(document.getElementById('edit-line'));
+}
+function switchHeader() {
+    switchVisible(document.getElementById('raw-header'));
+    switchVisible(document.getElementById('edit-header'));
+}
+function switchBody() {
+    switchVisible(document.getElementById('raw-body'));
+    switchVisible(document.getElementById('edit-body'));
+}
+function generateEditBody(http) {
+    var b = http.body;
+    var content = "";
+    for (var i = 0; i < b.length; i++) {
+        content += HTMLRender.inputSet(b[i][0], b[i][1], i, 'body') + "<br />";
+    }
+    document.getElementById("edit-body").innerHTML = content;
+    return content;
 }
 function executeDownload(name, content, mimeType) {
     var blob = new Blob([content], { type: mimeType });

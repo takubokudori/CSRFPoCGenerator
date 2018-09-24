@@ -280,7 +280,7 @@ var HTTPRequest = /** @class */ (function () {
     HTTPRequest.prototype.renderOperationHTML = function () {
         var content = "";
         for (var i in this.body_) {
-            content += HTMLrender.inputSet(this.body_[i][0], this.body_[i][1], i, 'b') + '<br />';
+            content += HTMLRender.inputSet(this.body_[i][0], this.body_[i][1], i, 'b') + '<br />';
         }
         return content;
     };
@@ -315,12 +315,13 @@ var forbiddenHeaderRegex = [
     /^Sec-.*$/,
     /^Proxy-.*$/
 ];
-var HTMLrender = {
+var HTMLRender = {
     inputSet: function (name, value, i, prefix) {
         if (prefix === void 0) { prefix = ''; }
         var content = '';
-        content += HTMLrender.input(prefix + 'name[' + i + ']', name) + ":";
-        content += HTMLrender.input(prefix + 'value[' + i + ']', value) + "\n";
+        content += HTMLRender.select("type[" + i + "]", ['text', 'hidden', 'number', 'email']);
+        content += HTMLRender.input(prefix + 'name[' + i + ']', name) + ":";
+        content += HTMLRender.input(prefix + 'value[' + i + ']', value) + "\n";
         return content;
     },
     input: function (name, value, type, isEscape) {
@@ -331,6 +332,21 @@ var HTMLrender = {
             value = escapeHTML(value);
         }
         return "<input type=\"" + type + "\" name=\"" + name + "\" value=\"" + value + "\" />";
+    },
+    select: function (name, optionValue, isEscape, checkIdx) {
+        if (isEscape === void 0) { isEscape = true; }
+        if (checkIdx === void 0) { checkIdx = 0; }
+        var content = "<select name=\"" + name + "\" >" + '\n';
+        for (var i = 0; i < optionValue.length; i++) {
+            var k = (isEscape ? escapeHTML(optionValue[i]) : optionValue[i]);
+            content += HTMLRender.option(k, k, checkIdx === i) + '\n';
+        }
+        content += "</select>" + '\n';
+        return content;
+    },
+    option: function (value, inner, isSelected) {
+        if (isSelected === void 0) { isSelected = false; }
+        return "<option value=" + value + " " + (isSelected ? 'selected' : '') + ">" + inner + "</option>";
     }
 };
 //# sourceMappingURL=HTTPRequest.js.map

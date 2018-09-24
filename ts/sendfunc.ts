@@ -17,11 +17,11 @@ const formfunc = {
 `;
         const params = httprequest.body;
         for (let i = 0; i < params.length; i++) {
-            ezhtml += HTMLrender.input(URLdecode(params[i][0]), URLdecode(params[i][1]), ((!form.isAutoSubmit() && form.isSpecifiable()) ? ("text") : ("hidden"))) + "\n";
+            ezhtml += HTMLRender.input(URLdecode(params[i][0]), URLdecode(params[i][1]), ((!form.isAutoSubmit() && form.isSpecifiable()) ? ("text") : ("hidden"))) + "\n";
         }
         ezhtml += `</form>
 <iframe src="x" width="1" height="1" name="dummyfrm" style="visibility:hidden"></iframe>`;
-        setEvilHTMLcontent(ezhtml);
+        setEvilHTMLContent(ezhtml);
 
         setEvilTextContent(ezhtml);
         errorMsg("");
@@ -84,7 +84,7 @@ xhr.withCredentials = true;
 }
 `;
         setEvilTextContent(ezhtml, true);
-        setEvilHTMLcontent(ezhtml);
+        setEvilHTMLContent(ezhtml);
         return true;
     },
 

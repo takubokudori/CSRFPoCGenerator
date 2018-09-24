@@ -29,6 +29,10 @@
         op.value = "other";
         op.innerText = "other";
         form.form.enctype.appendChild(op);
+        let k = document.getElementsByClassName('hide');
+        for (let i = 0; i < k.length; i++) {
+            k[i].style.display = "none";
+        }
     };
 
 </script>
@@ -83,10 +87,11 @@
                 <input type="text" name="rawline" size="60" value="" title="raw requst line"
                        placeholder="POST http://example.com HTTP/1.1">
             </div>
+            <span onclick="switchHeader()">header:</span>
             <div id="raw-header">
                 <textarea name="header" rows="6" cols="40" title="header" placeholder="HTTP Header"></textarea>
             </div>
-            <div id="edit-header">
+            <div id="edit-header" class="hide">
 
             </div>
             <div>enctype: <select name="enctype" onchange="triggerEnctype();" title="enctype">
@@ -98,7 +103,8 @@
                                                                  title="boundary"/>
                 <button onclick="detectBoundary();return false;">detect boundary</button>
             </div>
-            <div id="raw-body">body:<br/>
+            <span onclick="switchBody()">body:</span>
+            <div id="raw-body"><br/>
                 <textarea name="body" rows="6" cols="60" title="body" placeholder="HTTP Body"></textarea><br/>
                 <button name="generate" onclick="generatePoC(true);return false;">generate and submit</button>
                 <button name="generate" onclick="generatePoC(false);return false;">generate only</button>
