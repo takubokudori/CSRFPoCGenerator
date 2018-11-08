@@ -2,6 +2,12 @@
 Generate CSRF PoC
 
 ---
+# ROADMAP v1.6
+
+- add fromCharCode to headers
+- redirect feature
+
+---
 
 ## Parameters
 
