@@ -63,10 +63,10 @@ function csrfSubmit(){
 };
 
 const xhrfunc = {
-    generate: function (httprequest: HTTPRequest) {
-        const req = httprequest.line;
-        const enctype: string = HTTPRequest.buildHeaderOption(httprequest.enctype);
-        const headers = httprequest.header;
+    generate: function (httpRequest: HTTPRequest) {
+        const req = httpRequest.line;
+        const enctype: string = HTTPRequest.buildHeaderOption(httpRequest.enctype);
+        const headers = httpRequest.header;
         const sendMessage = (form.isFromCharCode() ? toFromCharCodes(form.getBody()) : "'" + escapeJavascript(form.getBody()) + "'");
         let ezhtml: string =
             `function csrfSubmit(){
