@@ -9,13 +9,14 @@ interface sendfunc {
 }
 
 const formfunc = {
-    generate(httprequest: HTTPRequest): boolean {
-        const req = httprequest.line;
+    generate(httpRequest: HTTPRequest): boolean {
+        const req = httpRequest.line;
         if (req === false) return false;
+        req['enctype']=form.getEnctype();
         let ezhtml: string = "";
         ezhtml += `<form target="dummyfrm" name="evilform" action="${req['url']}" method="${req['method']}" enctype="${req['enctype']}">
 `;
-        const params = httprequest.body;
+        const params = httpRequest.body;
         for (let i = 0; i < params.length; i++) {
             ezhtml += HTMLRender.input(URLdecode(params[i][0]), URLdecode(params[i][1]), ((!form.isAutoSubmit() && form.isSpecifiable()) ? ("text") : ("hidden"))) + "\n";
         }

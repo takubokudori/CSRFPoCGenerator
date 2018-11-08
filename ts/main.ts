@@ -253,6 +253,7 @@ function analyzeRequest(): void {
         if (triggerEnctype() === "multipart/form-data") detectBoundary();
     }
     generateEditBody(http);
+    errorMsg("");
 }
 
 function switchLine() {
