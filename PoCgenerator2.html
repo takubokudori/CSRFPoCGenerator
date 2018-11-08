@@ -53,15 +53,15 @@
 <form name="messageForm" method="POST">
     <div class="container">
         <div class="input-area">
-            <div>use fromCharCode:
-                <input type="checkbox" name="fcc" checked title="use fromCharCode">
-            </div>
             <div>send :
                 <input type="radio" name="sendmethod" id="form-method" value="formfunc" onclick="triggerFunc();"
                        checked><label
                         for="form-method">Form</label>
                 <input type="radio" name="sendmethod" id="xhr-method" value="xhrfunc" onclick="triggerFunc();"><label
                         for="xhr-method">XHR</label>
+            </div>
+            <div>use fromCharCode:
+                <input type="checkbox" name="fcc" checked title="use fromCharCode">
             </div>
             <div><label for="autosubmit">automatic submitting:
                 <input id="autosubmit" type="checkbox" name="autosubmit" value="autosubmit"

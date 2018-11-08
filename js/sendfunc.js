@@ -34,10 +34,10 @@ var formfunc = {
     }
 };
 var xhrfunc = {
-    generate: function (httprequest) {
-        var req = httprequest.line;
-        var enctype = HTTPRequest.buildHeaderOption(httprequest.enctype);
-        var headers = httprequest.header;
+    generate: function (httpRequest) {
+        var req = httpRequest.line;
+        var enctype = HTTPRequest.buildHeaderOption(httpRequest.enctype);
+        var headers = httpRequest.header;
         var sendMessage = (form.isFromCharCode() ? toFromCharCodes(form.getBody()) : "'" + escapeJavascript(form.getBody()) + "'");
         var ezhtml = "function csrfSubmit(){\nlet xhr=new XMLHttpRequest();\nxhr.open('" + req['method'] + "','" + req['url'] + "');\nxhr.withCredentials = true;\n";
         var hc = headers['custom'];
