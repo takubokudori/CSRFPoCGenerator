@@ -1,17 +1,18 @@
 # CSRFPoCGenerator
-generate CSRF PoC
+Generate CSRF PoC
 
 ---
 
 ## Parameters
 
 - send : send type(Form or XHR)
+- use fromCharCode : use fromCharCode (XHR only)
 - automatic submitting : submit when opening HTML file
     - specifiable : specify value HTML page(beta)
 - HTTP Request : set raw HTTP Request
 - URL : Set URL
 - method : Set method
-- ~~header :Set HTTP header~~(future work)
+- header :Set HTTP header (XHR only)
 - enctype : Select enctype
     - boundary : Set boundary for multipart/form-data
 - body : Set HTTP body
@@ -134,6 +135,11 @@ Then click "URL encode" and encode input string.
 ---
 
 # Change log
+
+v1.5
+
+- added request header feature (XHR)
+- added fromCharCode(XHR)
 
 v1.4
 
