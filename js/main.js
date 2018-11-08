@@ -279,6 +279,7 @@ function analyzeRequest() {
             detectBoundary();
     }
     generateEditBody(http);
+    errorMsg("");
 }
 function switchLine() {
     switchVisible(document.getElementById('raw-line'));
