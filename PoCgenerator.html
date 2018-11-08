@@ -6,695 +6,37 @@
     <meta name="author" content="takubokudori">
     <meta name="description" content="Generate CSRF PoC form">
     <link rel="author" href="https://github.com/takubokudori"/>
+    <link rel='stylesheet' href='css/main.css' type='text/css'/>
+    <script src="js/main.js"></script>
+    <script src="js/util.js"></script>
+    <script src="js/sendfunc.js"></script>
+    <script src="js/HTTPRequest.js"></script>
     <title>PoC Generator</title>
 </head>
 <body>
-<style>
-    .hide {
-        visibility: hidden;
-    }
-</style>
 <script>
-    class HTTPRequest {
-
-        /*
-        rawLine_;
-        rawHeader_;
-        rawBody_;
-        line_;
-        header_;
-        body_;
-        httpRequest_;
-        success_;
-        */
-
-        static separate_(str, delimiter) {
-            if (typeof str !== 'string' || typeof delimiter !== 'string') return str;
-            const idx = str.indexOf(delimiter);
-            return [str.substring(0, idx), str.slice(idx + delimiter.length)];
-        }
-
-        constructor(httpRequest = "") {
-            this.success_ = false;
-            if (httpRequest === "") return; // empty request
-            this.analyzeHTTPRequest(httpRequest);
-        }
-
-        analyzeHTTPRequest(httpRequest) {
-            this.success_ = false;
-            this.httpRequest_ = httpRequest;
-            httpRequest = httpRequest.replace(/\r?\n/g, "\r\n"); // unified \n -> \r\n
-            const http = HTTPRequest.separate_(httpRequest, "\r\n\r\n"); // [0]->request line & header, [1]->body
-            let httpHeader = HTTPRequest.separate_(http[0], "\r\n"); // [0]->request line, [1]->header
-            const httpLine = this.analyzeLine(httpHeader[0]);
-            if (httpLine === false) return false; // failed to parse request line.
-            httpHeader = this.analyzeHeader(httpHeader[1]);
-            if (httpHeader === false) return false; // failed to parse header.
-
-            // body
-            let httpBody = [];
-            if (typeof httpHeader['Content-Type'] !== 'undefined') httpBody = this.analyzeHTTPBody(http[1], httpHeader['Content-Type']);
-            else if (httpLine['method'] === "GET") httpBody = this.analyzeHTTPBody(HTTPRequest.separate_(httpLine['url'], "?")[1]);
-            else httpBody = this.analyzeHTTPBody(http[1]);
-            if (httpBody === false) return false; // failed to parse body.
-
-            this.success_ = true;
-            return true;
-        }
-
-        analyzeLine(line) {
-            const q = line.split(' ');
-            if (q.length <= 1) return false;
-            this.rawLine_ = line;
-
-            this.line_ = {
-                'method': q[0],
-                'url': q[1],
-                'version': q[2]
-            };
-            return this.line_;
-        }
-
-        static analyzeURL(url) {
-            const a = HTTPRequest.separate_(url, "?");
-            return {
-                'url': a[0],
-                'querystring': HTTPRequest.analyzeQueryString(a[1])
-            };
-        }
-
-        static analyzeQueryString(qs) {
-            const p = qs.split("&");
-            let dict = [];
-            for (let i = 0; i < p.length; i++) {
-                dict.push(p[i].split("="));
-            }
-            return dict;
-        }
-
-        static analyzeHeaderOption(headerValue) {
-            let v = headerValue.split('; ');
-            const ret = [];
-            for (let i = 0; i < v.length; i++) {
-                let k = v[i].split('=');
-                if (k.length === 1) ret.push(k[0]); // string
-                else ret.push(k); // array
-            }
-            return ret;
-        }
-
-        static analyzeHeader_(rawHeader) {
-            let header = rawHeader.split(/\r\n|\n/);
-            const ret = {
-                'custom': [], // custom headers
-            };
-            for (let i = 0; i < header.length; i++) {
-                const h = HTTPRequest.separate_(header[i], ':');
-                if (h.length === 2) {
-                    h[0] = h[0].trim(); // header name
-                    h[1] = h[1].trim(); // value
-                    if (!forbiddenHeader[h[0]]) ret['custom'].push(h); // custom header
-                    else { // forbidden header
-                        if (h[0] === 'Referer') ret[h[0]] = h[1]; // Referer: http://localhost?a=b etc...
-                        else ret[h[0]] = HTTPRequest.analyzeHeaderOption(h[1]);
-                    }
-                }
-            }
-            return ret;
-        }
-
-        analyzeHeader(rawHeader) {
-            this.rawHeader_ = rawHeader;
-            this.header_ = HTTPRequest.analyzeHeader_(rawHeader);
-            return this.line_;
-        }
-
-        analyzeHTTPBody(rawBody, contentType = "") {
-            let ret;
-            if (contentType[0] === "multipart/form-data") {
-                let boundary = "";
-                for (let i in contentType) {
-                    if (contentType.hasOwnProperty(i)) {
-                        if ((Array.isArray(contentType[i])) && contentType[i][0] === 'boundary') {
-                            boundary = contentType[i][1];
-                            break;
-                        }
-                    }
-                }
-                ret = HTTPRequest.analyzeMultipartParams(rawBody, boundary);
-            } else {
-                ret = HTTPRequest.analyzeParams(rawBody);
-            }
-            this.rawBody_ = rawBody;
-            this.body_ = ret;
-            return ret;
-        }
-
-        static analyzeMultipartParams(params, boundary) {
-            if (typeof params !== 'string' || params === '') return [];
-            let ret = [];
-            let h;
-            params = params.split('--' + boundary);
-            for (let i = 0; i < params.length; i++) {
-                h = HTTPRequest.separate_(params[i], "\r\n\r\n"); // [0]->header, [1]->params
-                h[0] = HTTPRequest.analyzeHeader_(h[0]);
-                ret.push([h[0], h[1]]);
-
-            }
-            return ret;
-        }
-
-        static analyzeParams(params) {
-            if (typeof params !== 'string' || params === '') return [];
-            const param = params.split("&");
-            const dict = [];
-            for (const i in param) {
-                const t = param[i].split("=");
-                dict.push(t);
-            }
-            return dict; // dict[0][0]=name dict[0][1]=value
-        }
-
-        get rawHeader() {
-            return this.rawHeader_;
-        }
-
-        get rawBody() {
-            return this.rawBody_;
-        }
-
-        get rawLine() {
-            return this.rawLine_;
-        }
-
-        get header() {
-            return this.header_;
-        }
-
-        get body() {
-            return this.body_;
-        }
-
-        get line() {
-            return this.line_;
-        }
-
-        get httpRequest() {
-            return this.httpRequest_;
-        }
-
-        get success() {
-            return this.success_;
-        }
-
-        // TODO: inherit this
-        renderOperationHTML() {
-            let content = "";
-            for (let i in this.body_) {
-                content += HTMLrender.inputSet(this.body_[i][0], this.body_[i][1], i, 'b') + '<br />';
-            }
-            return content;
-        }
-    }
-
-    let form;
-    let http;
-
-    const HTMLrender = {
-        inputSet: function (name, value, i, prefix = '') {
-            let content = '';
-            content += HTMLrender.input(prefix + 'name[' + i + ']', name) + ":";
-            content += HTMLrender.input(prefix + 'value[' + i + ']', value) + "\n";
-            return content;
-        },
-
-        input: function (name, value, type = 'text', isEscape = true) {
-            if (isEscape) {
-                name = escapeHTML(name);
-                value = escapeHTML(value);
-            }
-            return '<input type="' + type + '" name="' + name + '" value="' + value + '" />';
-        }
-    };
-
-    const forbiddenHeader = {
-        'Accept-Charset': '1',
-        'Accept-Encoding': '1',
-        'Access-Control-Request-Headers': '1',
-        'Access-Control-Request-Method': '1',
-        'Connection': '1',
-        'Content-Length': '1',
-        'Content-Type': '1',
-        'Cookie': '1',
-        'Cookie2': '1',
-        'Date': '1',
-        'DNT': '1',
-        'Expect': '1',
-        'Host': '1',
-        'Keep-Alive': '1',
-        'Origin': '1',
-        'Proxy-': '1',
-        'Sec-': '1',
-        'Referer': '1',
-        'TE': '1',
-        'Trailer': '1',
-        'Transfer-Encoding': '1',
-        'Upgrade': '1',
-        'Via': '1'
-    };
-
-    const enctypes = {
-        "application/x-www-form-urlencoded": 1, // 1->selected
-        "multipart/form-data": 2,
-        "application/json": 2,
-        "text/plain": 2
-    };
-    const formfunc = {
-        generate: function () {
-            let ezhtml = "";
-            const req = getRequest();
-            if (req === false) return false;
-            ezhtml += '<form target="dummyfrm" name="evilform" action="' + req['url'] + '" method="' + req['method'] + '" enctype="' + req['enctype'] + '">\n';
-            const params = req['params'];
-            for (let i = 0; i < params.length; i++) {
-                ezhtml += HTMLrender.input(URLdecode(params[i][0]), URLdecode(params[i][1]), ((!isAutoSubmit() && isSpecifiable()) ? ("text") : ("hidden"))) + "\n";
-            }
-            ezhtml += '</form>\n';
-            ezhtml += '<iframe src="x" width="1" height="1" name="dummyfrm" style="visibility:hidden"></iframe>';
-            setEvilHTMLcontent(ezhtml);
-
-            setEvilTextContent(ezhtml);
-            errorMsg("");
-            return true;
-        },
-
-        generateHTML: function (title, bodyhtml) {
-            let content = getHTMLheader(title);
-            content += '<body';
-            if (isAutoSubmit()) content += ' onload="csrfSubmit();"';
-            content += '>\n';
-            content += bodyhtml;
-            if (!isAutoSubmit()) {
-                content += '<button onclick="csrfSubmit();">submit</button>\n';
-            }
-            content += formfunc.sendFunction();
-            content += '\n<p>' + title + '</p>\n';
-            content += '</body>\n';
-            content += getHTMLfooter();
-            return content;
-        },
-
-        send: function () {
-            const req = getRequest();
-            document.getElementById("stat").innerHTML += "<p>Request sent.</p><p>" + escapeHTML(req['url']) + "</p><p>" + escapeHTML(req['params']) + "</p><hr />";
-            const submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
-            submit();
-        },
-
-        sendFunction: function () {
-            let content = '<sc' + 'ript>\n';
-            content += 'function csrfSubmit(){\n';
-            content += 'let submit = HTMLFormElement.prototype["submit"].bind(document.evilform);\n';
-            content += 'submit();\n';
-            content += '}\n';
-            content += '</sc' + 'ript>\n';
-            return content;
-        }
-
-    };
-
-    const xhrfunc = {
-        generate: function () {
-            const req = getRequest();
-            if (req === false) return false;
-            let ezhtml = "";
-            ezhtml += "function csrfSubmit(){\n";
-            ezhtml += "let xhr=new XMLHttpRequest();\n";
-            ezhtml += "xhr.open('" + req['method'] + "','" + req['url'] + "');\n";
-            ezhtml += "xhr.withCredentials = true;\n";
-            ezhtml += "xhr.setRequestHeader('Content-Type','" + req['enctype'] + "'";
-            if (req['enctype'] === "multipart/form-data") ezhtml += "+'; boundary=" + req['boundary'] + "'";
-            ezhtml += ");\n";
-            ezhtml += "xhr.send('" + escapeJavascript(getParamsRaw()) + "');\n";
-            ezhtml += "}\n";
-            setEvilTextContent(ezhtml, true);
-            setEvilHTMLcontent(ezhtml);
-            return true;
-        },
-
-        generateHTML: function (title, bodyhtml) {
-            let content = getHTMLheader(title);
-            content += '<body';
-            if (isAutoSubmit()) content += ' onload="csrfSubmit();"';
-            content += '>\n';
-            content += bodyhtml;
-            if (!isAutoSubmit()) content += '<button onclick="csrfSubmit();">submit</button>\n';
-            content += '\n<p>' + title + '</p>\n';
-            content += '</body>\n';
-            content += getHTMLfooter();
-            return content;
-        },
-
-        send: function () {
-            eval(document.getElementById("evilzone").textContent);
-            csrfSubmit();
-        }
-    };
-
-    let func;
-
     window.onload = function () {
-        form = document.forms.messageForm;
         func = formfunc;
+        form.form = document.getElementsByName("messageForm")[0];
         for (const key in enctypes) {
             let op = document.createElement("option");
             op.value = key;
             op.innerText = key;
             if (enctypes[key] === 1) op.selected = true;
-            form.enctype.appendChild(op);
+            form.form.enctype.appendChild(op);
         }
         let op = document.createElement("option"); // append other
         op.value = "other";
         op.innerText = "other";
-        form.enctype.appendChild(op);
+        form.form.enctype.appendChild(op);
+        let k = document.getElementsByClassName('hide');
+        for (let i = 0; i < k.length; i++) {
+            k[i].style.display = "none";
+        }
     };
 
-    /**
-     * @return {string}
-     */
-    function URLencode(str) {
-        if (typeof str !== 'string') return str;
-        return encodeURIComponent(str.replace(/\r?\n/g, "\r\n"));
-    }
-
-    /**
-     * @return {string}
-     */
-    function URLdecode(str) {
-        if (typeof str !== 'string') return str;
-        return decodeURIComponent(str.replace(/\+/g, '%20'));
-    }
-
-
-    function escapeHTML(str) {
-        if (typeof str !== 'string') return str;
-        return str.replace(/[&'`"<>\n\r]/g, function (match) {
-            return {
-                '\r': '&#x0D',
-                '\n': '&#x0A',
-                '&': '&amp;',
-                "'": '&#x27;',
-                '`': '&#x60;',
-                '"': '&quot;',
-                '<': '&lt;',
-                '>': '&gt;',
-            }[match]
-        });
-    }
-
-    /**
-     * withoutPrintable -> without printable characters except HTML special characters.
-     */
-    function fullEscapeHTML(str, withoutPrintable = false) {
-        if (typeof str !== 'string') return str;
-        let content = "";
-        for (let i = 0; i < str.length; i++) {
-            content += "&#x" + str.charCodeAt(i) + ";";
-        }
-        if (withoutPrintable) {
-            for (let i = 0; i < str.length; i++) {
-                let c = str.charCodeAt(i);
-                // ! #$% ()*+,-./0-9 ?@A-Z[\]^_`a-z...
-                let b = (c === 0x21) || (0x23 <= c && c <= 0x25) || (0x27 <= c && 0x3B) || (0x3F <= c && c <= 0x7E);
-                content += (b ? ("&#x" + str.charCodeAt(i) + ";") : str[i]);
-            }
-        }
-        return content;
-    }
-
-    /**
-     * "abc" -> "String.fromCharCode(97,98,99)"
-     */
-    function toFromCharCodes(str) {
-        if (typeof str !== 'string') return str;
-        let content = "String.fromCharCode(";
-        for (let i = 0; i < str.length; i++) {
-            if (i !== 0) content += ',';
-            content += str.charCodeAt(i);
-        }
-        content += ")";
-        return content;
-    }
-
-    function escapeJavascript(str) {
-        return str.replace(/['"\\\n\r]|(cript>)/g, function (match) {
-            return {
-                '\r': '\\r',
-                '\n': '\\n',
-                "'": '\\\'',
-                '"': '\\\"',
-                "\\": '\\\\',
-                "cript>": 'cr\'+\'ipt>',
-            }[match]
-        });
-    }
-
-    function escapeJavascriptCRLF(str) {
-        return str.replace(/[\n\r]/g, function (match) {
-            return {
-                '\r': '\\r',
-                '\n': '\\n',
-            }[match]
-        });
-    }
-
-    function errorMsg(msg) {
-        if (typeof msg !== 'string') return msg;
-        document.getElementById("errormsg").textContent = msg;
-    }
-
-    function setEvilHTMLcontent(ezhtml) {
-        document.getElementById("evilzone").innerHTML = ezhtml;
-    }
-
-    function setEvilTextContent(ezhtml, isScript = false) {
-        if (isScript) ezhtml = "<" + "script>\n" + ezhtml + "</" + "script>\n";
-        document.getElementById("nowhtml").innerText = ezhtml;
-    }
-
-    function triggerFunc() {
-        const sm = form.sendmethod.value;
-        eval('func=' + sm + ';');
-    }
-
-
-    function triggerAuto() {
-        const as = form.autosubmit.checked;
-        if (as) {
-            document.getElementById("div-specifiable").style.visibility = "hidden";
-        } else {
-            document.getElementById("div-specifiable").style.visibility = "visible";
-        }
-    }
-
-    function triggerEnctype() {
-        const enctype = form.enctype.value;
-        if (enctype === "multipart/form-data") {
-            document.getElementById("div-boundary").style.visibility = "visible";
-        } else {
-            document.getElementById("div-boundary").style.visibility = "hidden";
-        }
-        if (enctype === "other") {
-            document.getElementById("span-enctypeother").style.visibility = "visible";
-        } else {
-            document.getElementById("span-enctypeother").style.visibility = "hidden";
-        }
-        return enctype;
-    }
-
-    function generatePoC(isSubmit) {
-        http = new HTTPRequest();
-        const success = func.generate();
-        if (success && isSubmit) func.send();
-    }
-
-    function getRequest() {
-        const url = getURL();
-        if (url === "") {
-            errorMsg("URL is empty!");
-            return false;
-        }
-        const method = getMethod();
-        if (method === "") {
-            errorMsg("method is empty!");
-            return false;
-        }
-        const enctype = getEnctype();
-        if (enctype === "") {
-            errorMsg("enctype is empty!");
-            return false;
-        }
-        const params = getParams();
-        const boundary = form.boundary.value;
-        return {
-            'url': url,
-            'method': method,
-            'enctype': enctype,
-            'params': params,
-            'boundary': boundary
-        };
-    }
-
-    function getURL() {
-        return form.url.value;
-    }
-
-    function getMethod() {
-        return form.method.value;
-    }
-
-    function getEnctype() {
-        const et = form.enctype.value;
-        if (et === "other") return form.enctypeother.value;
-        return et;
-    }
-
-    function isAutoSubmit() {
-        return form.autosubmit.checked;
-    }
-
-    function isSpecifiable() {
-        return form.specifiable.checked;
-    }
-
-    const validProtocol = {
-        'http': 1,
-        'https': 1,
-        'ftp': 1
-    };
-
-    function validateURL(url) {
-        if (typeof url !== 'string') return false;
-        const idx = url.indexOf(':');
-        return (typeof validProtocol[url.substring(0, idx)]) !== 'undefined';
-
-    }
-
-    function detectBoundary() {
-        let pm = getParamsRaw();
-        pm = pm.split(/\r\n|\n/);
-
-        let k;
-        for (let i = pm.length - 1; i >= 0; i--) {
-            k = pm[i].match(/^--[0-9a-zA-Z-]+--$/g);
-            if (k != null && k.length === 1) {
-                form.boundary.value = k[0].slice(2, k.length - 3);
-                return;
-            }
-        }
-        errorMsg("failed to detect boundary!Is params perfect format?");
-    }
-
-    function getParamsRaw() {
-        return form.params.value;
-    }
-
-    function getParams() {
-        const params = getParamsRaw();
-        if (params === "") return false;
-        const param = params.split("&");
-        const dict = [];
-        for (let i = 0; i < param.length; i++) {
-            const t = param[i].split("=");
-            dict.push(t);
-        }
-        return dict;
-    }
-
-    function sendPoC() {
-        func.send();
-    }
-
-    function analyzeRequest() {
-        const req = form.httprequest.value;
-        if (req === "") {
-            errorMsg("Raw HTTP request is empty!");
-            return;
-        }
-        http = new HTTPRequest(req);
-        if (!http.success) {
-            errorMsg("failed to parse HTTP request!");
-            return;
-        }
-        form.url.value = http.line['url'];
-        form.method.value = http.line['method'];
-        form.params.value = http.rawBody;
-        form.header.value = http.rawHeader;
-        if (typeof http.header['Content-Type'] !== 'undefined') {
-            if (enctypes[http.header['Content-Type'][0]]) form.enctype.value = http.header['Content-Type'][0];
-            else {
-                form.enctype.value = "other";
-                form.enctypeother.value = http.header['Content-Type'][0];
-            }
-            if (triggerEnctype() === "multipart/form-data") detectBoundary();
-        }
-        document.getElementById("param-operation").innerHTML = http.renderOperationHTML();
-    }
-
-    function executeDownload(name, content, mimeType) {
-        const blob = new Blob([content], {type: mimeType});
-
-        const a = document.createElement('a');
-        a.download = name;
-        a.target = '_blank';
-        if (window.navigator.msSaveBlob) {
-            window.navigator.msSaveBlob(blob, name)
-        }
-        else if (window.URL && window.URL.createObjectURL) {
-            a.href = window.URL.createObjectURL(blob);
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-        else if (window.webkitURL && window.webkitURL.createObject) {
-            a.href = window.webkitURL.createObjectURL(blob);
-            a.click();
-        }
-        else {
-            window.open('data:' + mimeType + ';base64,' + window.Base64.encode(content), '_blank');
-        }
-    }
-
-    function getHTMLheader(title = "CSRF PoC") {
-        let content = '<!DOCTYPE html>\n\n';
-        content += '<html>\n';
-        content += '<head>\n';
-        content += '<meta charset="utf-8">\n';
-        content += '<title>' + title + '</title>\n';
-        content += '</head>\n';
-        return content;
-    }
-
-    function getHTMLfooter() {
-        let content = '</html>\n';
-        return content;
-    }
-
-    function downloadHTML() {
-        const nh = document.getElementById("nowhtml");
-        if (nh.textContent === "") {
-            errorMsg("No downloadable HTML! generate form!");
-            return;
-        }
-        const title = form.title.value;
-        const content = func.generateHTML(title, nh.innerText);
-
-        const mimeType = 'text/plain';
-        const name = "poc.html";
-        executeDownload(name, content, mimeType);
-    }
 </script>
-<h1>PoCGenerator v1.4</h1>
+<h1>PoCGenerator v1.5</h1>
 
 <div>
     URLencode:<textarea id="uea" name="urlencodearea" rows="1" cols="60" title="URL encode"></textarea>
@@ -706,43 +48,76 @@
 <hr>
 
 
-<span id="errormsg" style="color:red;"></span>
+<span id="errormsg" class="errormsg"></span>
 
-<form name="messageForm">
-    <div>send :
-        <input type="radio" name="sendmethod" id="form-method" value="formfunc" onclick="triggerFunc();" checked><label
-                for="form-method">Form</label>
-        <input type="radio" name="sendmethod" id="xhr-method" value="xhrfunc" onclick="triggerFunc();"><label
-                for="xhr-method">XHR</label></div>
-    <div>automatic submitting:<input type="checkbox" name="autosubmit" value="autosubmit"
-                                     onclick="triggerAuto();return true;" checked title="Automatic submitting"/></div>
-    <div class="hide" id="div-specifiable">specifiable:<input type="checkbox" name="specifiable" value="specifiable"
-                                                              title="Specifiable parameter"/>
-    </div>
-    <div>HTTP Request:<br/>
-        <textarea name="httprequest" rows="6" cols="60" title="HTTP Request"></textarea><br/>
-        <button name="analyze" onclick="analyzeRequest();return false;">analyze</button>
-        URL:<input type="text" name="url" size="50" title="URL"/></div>
-    <div>method: <input type="text" name="method" size="8" value="POST" title="method"/></div>
-    <div>header: <textarea name="header" rows="6" cols="40" title="header"></textarea></div>
-    <div>enctype: <select name="enctype" onchange="triggerEnctype();" title="enctype">
-    </select><span class="hide" id="span-enctypeother">other:<input type="text" name="enctypeother" size="20" value=""
-                                                                    title="enctype"/></span>
-    </div>
-    <div class="hide" id="div-boundary">boundary: <input type="text" name="boundary" size="20" value=""
-                                                         title="boundary"/>
-        <button onclick="detectBoundary();return false;">detect boundary</button>
-    </div>
-    <div>body:<br/>
-        <textarea name="params" rows="6" cols="60" title="Parameter"></textarea><br/>
-        <button name="generate" onclick="generatePoC(true);return false;">generate and submit</button>
-        <button name="generate" onclick="generatePoC(false);return false;">generate only</button>
-    </div>
-    <div>title:<input type="text" name="title" size="20" value="CSRF PoC" title="HTML title"/>
-        <button name="downloadhtml" onclick="generatePoC();downloadHTML();return false;">download HTML</button>
+<form name="messageForm" method="POST">
+    <div class="container">
+        <div class="input-area">
+            <div>send :
+                <input type="radio" name="sendmethod" id="form-method" value="formfunc" onclick="triggerFunc();"
+                       checked><label
+                        for="form-method">Form</label>
+                <input type="radio" name="sendmethod" id="xhr-method" value="xhrfunc" onclick="triggerFunc();"><label
+                        for="xhr-method">XHR</label>
+            </div>
+            <div>use fromCharCode:
+                <input type="checkbox" name="fcc" checked title="use fromCharCode">
+            </div>
+            <div><label for="autosubmit">automatic submitting:
+                <input id="autosubmit" type="checkbox" name="autosubmit" value="autosubmit"
+                       onclick="triggerAuto();return true;" checked title="Automatic submitting"/>
+            </label>
+            </div>
+            <div class="hide" id="div-specifiable"><label for="specifiable">specifiable:
+                <input id="specifiable" type="checkbox" name="specifiable" value="specifiable"
+                       title="Specifiable parameter"/>
+            </label>
+            </div>
+            <div>HTTP Request:<br/>
+                <textarea name="httprequest" rows="6" cols="60" title="HTTP Request"
+                          placeholder="HTTP Request"></textarea><br/>
+                <button name="analyze" onclick="analyzeRequest();return false;">analyze</button>
+            </div>
+            <div>
+                <input type="text" name="method" size="8" value="POST" title="method" placeholder="Method"/>
+                <input type="text" name="url" size="50" title="URL" placeholder="URL"/>
+                <input type="text" name="version" size="10" value="HTTP/1.1" title="version" placeholder="HTTP Version">
+            </div>
+            <div class="hide">
+                <input type="text" name="rawline" size="60" value="" title="raw requst line"
+                       placeholder="POST http://example.com HTTP/1.1">
+            </div>
+            <span onclick="switchHeader()">header:</span>
+            <div id="raw-header">
+                <textarea name="header" rows="6" cols="40" title="header" placeholder="HTTP Header"></textarea>
+            </div>
+            <div id="edit-header" class="hide">
+
+            </div>
+            <div>enctype: <select name="enctype" onchange="triggerEnctype();" title="enctype">
+            </select><span class="hide" id="span-enctypeother">other:<input type="text" name="enctypeother" size="20"
+                                                                            value=""
+                                                                            title="enctype"/></span>
+            </div>
+            <div class="hide" id="div-boundary">boundary: <input type="text" name="boundary" size="20" value=""
+                                                                 title="boundary"/>
+                <button onclick="detectBoundary();return false;">detect boundary</button>
+            </div>
+            <span onclick="switchBody()">body:</span>
+            <div id="raw-body"><br/>
+                <textarea name="body" rows="6" cols="60" title="body" placeholder="HTTP Body"></textarea><br/>
+                <button name="generate" onclick="generatePoC(true);return false;">generate and submit</button>
+                <button name="generate" onclick="generatePoC(false);return false;">generate only</button>
+            </div>
+            <div class="hide" id="edit-body">
+
+            </div>
+            <div>title:<input type="text" name="title" size="20" value="CSRF PoC" title="HTML title"/>
+                <button name="downloadhtml" onclick="generatePoC();downloadHTML();return false;">download HTML</button>
+            </div>
+        </div>
     </div>
 </form>
-<div id="param-operation"></div>
 <div id="evilzone" style="visibility:hidden;display:none;"></div>
 <hr/>
 <div id="nowhtml"></div>
