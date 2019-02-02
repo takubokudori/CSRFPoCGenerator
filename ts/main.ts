@@ -145,6 +145,7 @@ function setEvilTextContent(ezhtml, isScript = false) {
 function triggerFunc(): void {
     const sm = form.getSendMethod();
     chVisible(document.getElementById("div-xhrfeatures"), sm === "xhrfunc");
+    chVisible(document.getElementById("div-formfeatures"), sm === "formfunc");
     eval('func=' + sm + ';');
 }
 
