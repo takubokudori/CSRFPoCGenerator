@@ -5,6 +5,9 @@ var form = /** @class */ (function () {
     form.getSendMethod = function () {
         return this.form.sendmethod.value;
     };
+    form.isTransitionSubmit = function () {
+        return this.form.transitionsubmit.checked;
+    };
     form.isAutoSubmit = function () {
         return this.form.autosubmit.checked;
     };
@@ -61,6 +64,13 @@ var form = /** @class */ (function () {
     Object.defineProperty(form, "autosubmit", {
         get: function () {
             return form.isAutoSubmit();
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(form, "transitionsubmit", {
+        get: function () {
+            return form.isTransitionSubmit();
         },
         enumerable: true,
         configurable: true

@@ -7,6 +7,10 @@ class form {
         return this.form.sendmethod.value;
     }
 
+    static isTransitionSubmit() {
+        return this.form.transitionsubmit.checked;
+    }
+
     static isAutoSubmit() {
         return this.form.autosubmit.checked;
     }
@@ -67,6 +71,10 @@ class form {
 
     static get autosubmit() {
         return form.isAutoSubmit();
+    }
+
+    static get transitionsubmit() {
+        return form.isTransitionSubmit();
     }
 
     static get specifiable() {
@@ -289,21 +297,18 @@ function executeDownload(name, content, mimeType): void {
     a.target = '_blank';
     if (window.navigator.msSaveBlob) {
         window.navigator.msSaveBlob(blob, name)
-    }
-    else if (window.URL && window.URL.createObjectURL) {
+    } else if (window.URL && window.URL.createObjectURL) {
         a.href = window.URL.createObjectURL(blob);
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-    }
-    else {
+    } else {
         // @ts-ignore
         if (window.webkitURL && window.webkitURL.createObject) {
             // @ts-ignore
             a.href = window.webkitURL.createObjectURL(blob);
             a.click();
-        }
-        else {
+        } else {
             // @ts-ignore
             window.open('data:' + mimeType + ';base64,' + window.Base64.encode(content), '_blank');
         }

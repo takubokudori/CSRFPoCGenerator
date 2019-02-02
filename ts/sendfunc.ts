@@ -12,9 +12,11 @@ const formfunc = {
     generate(httpRequest: HTTPRequest): boolean {
         const req = httpRequest.line;
         if (req === false) return false;
-        req['enctype']=form.getEnctype();
+        req['enctype'] = form.getEnctype();
         let ezhtml: string = "";
-        ezhtml += `<form target="dummyfrm" name="evilform" action="${req['url']}" method="${req['method']}" enctype="${req['enctype']}">
+        let transsub = "";
+        if (!form.isTransitionSubmit()) transsub = 'target="dummyfrm"';
+        ezhtml += `<form ${transsub} name="evilform" action="${req['url']}" method="${req['method']}" enctype="${req['enctype']}">
 `;
         const params = httpRequest.body;
         for (let i = 0; i < params.length; i++) {
