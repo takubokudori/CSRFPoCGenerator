@@ -5,7 +5,10 @@ var formfunc = {
             return false;
         req['enctype'] = form.getEnctype();
         var ezhtml = "";
-        ezhtml += "<form target=\"dummyfrm\" name=\"evilform\" action=\"" + req['url'] + "\" method=\"" + req['method'] + "\" enctype=\"" + req['enctype'] + "\">\n";
+        var transsub = "";
+        if (!form.isTransitionSubmit())
+            transsub = 'target="dummyfrm"';
+        ezhtml += "<form " + transsub + " name=\"evilform\" action=\"" + req['url'] + "\" method=\"" + req['method'] + "\" enctype=\"" + req['enctype'] + "\">\n";
         var params = httpRequest.body;
         for (var i = 0; i < params.length; i++) {
             ezhtml += HTMLRender.input(URLdecode(params[i][0]), URLdecode(params[i][1]), ((!form.isAutoSubmit() && form.isSpecifiable()) ? ("text") : ("hidden"))) + "\n";

@@ -2,17 +2,12 @@
 Generate CSRF PoC
 
 ---
-# ROADMAP v1.6
-
-- add fromCharCode to headers
-- redirect feature
-
----
 
 ## Parameters
 
 - send : send type(Form or XHR)
 - use fromCharCode : use fromCharCode (XHR only)
+- transition on submit : force Transition on Submit
 - automatic submitting : submit when opening HTML file
     - specifiable : specify value HTML page(beta)
 - HTTP Request : set raw HTTP Request
@@ -50,7 +45,7 @@ Accept-Encoding: gzip, deflate
 Content-Type: application/x-www-form-urlencoded
 Content-Length: 78
 Connection: keep-alive
-Cookie: ucp_tabs=2; wp-settings-1=libraryContent%3Dbrowse%26mfold%3Do%26editor%3Dtinymce%26uploader%3D1; wp-settings-time-1=1535524023; wordpress_logged_in_86a9106ae65537651a8e456835b316ab=admin%7C1536409565%7C8RhEzw0sDtJ91FxFP0dHvh6hSxLcltB3ErbGiZ5Ae5J%7C778801fe295ae26bfa37ac95429e6c969ee7bb8d9b614df39c464f484f4918f3; pps_show_100=1
+Cookie: PHPSESSID=PaP2yx9xeWc10XV9mjxBjWb8iu3MmWb6
 Upgrade-Insecure-Requests: 1
 
 title=CSRF&name=hello+world&comment=%3Cscript%3Ealert%281%29%3B%3C%2Fscript%3E
