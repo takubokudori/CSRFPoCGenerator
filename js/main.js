@@ -172,6 +172,7 @@ function setEvilTextContent(ezhtml, isScript) {
 function triggerFunc() {
     var sm = form.getSendMethod();
     chVisible(document.getElementById("div-xhrfeatures"), sm === "xhrfunc");
+    chVisible(document.getElementById("div-formfeatures"), sm === "formfunc");
     eval('func=' + sm + ';');
 }
 function triggerAuto() {
