@@ -137,6 +137,10 @@ Then click "URL encode" and encode input string.
 
 # Change log
 
+v1.6
+
+- added transition on submit
+
 v1.5
 
 - added request header feature (XHR)
