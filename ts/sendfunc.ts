@@ -45,17 +45,20 @@ ${getHTMLfooter()}
 
     send(httprequest: HTTPRequest): boolean {
         const req = httprequest;
-        if (isValidURL(req.line['url'])) {
-            document.getElementById("stat").innerHTML += `<p>${new Date().toLocaleString()} Request sent.</p><p>${escapeHTML(req.line['url'])}</p><p>${escapeHTML(req.rawBody)}</p><hr />`;
-            // @ts-ignore
-            const submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
-            submit(); // submit request.
-            errorMsg("");
-            return true;
-        } else {
+        if (form.isTransitionSubmit()) {
+            errorMsg("Cannot submit because \"transition on submit\" is on!");
+            return false;
+        }
+        if (!isValidURL(req.line['url'])) {
             errorMsg("The URL is malformed");
             return false;
         }
+        document.getElementById("stat").innerHTML += `<p>${new Date().toLocaleString()} Request sent.</p><p>${escapeHTML(req.line['url'])}</p><p>${escapeHTML(req.rawBody)}</p><hr />`;
+        // @ts-ignore
+        const submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
+        submit(); // submit request.
+        errorMsg("");
+        return true;
     },
 
     generateSendFunction(): string {
