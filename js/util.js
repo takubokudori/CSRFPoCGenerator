@@ -10,6 +10,7 @@ function escapeJavascript(str) {
         }[match];
     });
 }
+
 function escapeJavascriptCRLF(str) {
     return str.replace(/[\n\r]/g, function (match) {
         return {
@@ -18,6 +19,7 @@ function escapeJavascriptCRLF(str) {
         }[match];
     });
 }
+
 function escapeHTML(str) {
     if (typeof str !== 'string')
         return str;
@@ -34,11 +36,15 @@ function escapeHTML(str) {
         }[match];
     });
 }
+
 function e(str) {
     return escapeHTML(str);
 }
+
 function fullEscapeHTML(str, withoutPrintable) {
-    if (withoutPrintable === void 0) { withoutPrintable = false; }
+    if (withoutPrintable === void 0) {
+        withoutPrintable = false;
+    }
     if (typeof str !== 'string')
         return str;
     var content = "";
@@ -46,7 +52,7 @@ function fullEscapeHTML(str, withoutPrintable) {
         content += "&#x" + str.charCodeAt(i) + ";";
     }
     if (withoutPrintable) {
-        for (var i = 0; i < str.length; i++) {
+        for (i = 0; i < str.length; i++) {
             var c = str.charCodeAt(i);
             // ! #$% ()*+,-./0-9 ?@A-Z[\]^_`a-z...
             var b = (c === 0x21) || (0x23 <= c && c <= 0x25) || (0x27 <= c && 0x3B) || (0x3F <= c && c <= 0x7E);
@@ -55,6 +61,7 @@ function fullEscapeHTML(str, withoutPrintable) {
     }
     return content;
 }
+
 /**
  * "abc" -> "String.fromCharCode(97,98,99)"
  * for sending binary files.
@@ -71,4 +78,9 @@ function toFromCharCodes(str) {
     content += ")";
     return content;
 }
+
+function isValidURL(str) {
+    return /^.+:\/\/.+$/.test(str);
+}
+
 //# sourceMappingURL=util.js.map
