@@ -71,3 +71,7 @@ function toFromCharCodes(str) {
     content += ")";
     return content;
 }
+
+function isValidURL(str):boolean{
+    return /^.+:\/\/.+$/.test(str);
+}

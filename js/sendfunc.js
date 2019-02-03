@@ -25,11 +25,18 @@ var formfunc = {
     },
     send: function (httprequest) {
         var req = httprequest;
-        document.getElementById("stat").innerHTML += "<p>" + new Date().toLocaleString() + " Request sent.</p><p>" + escapeHTML(req.line['url']) + "</p><p>" + escapeHTML(req.rawBody) + "</p><hr />";
-        // @ts-ignore
-        var submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
-        submit();
-        return true;
+        if (isValidURL(req.line['url'])) {
+            document.getElementById("stat").innerHTML += "<p>" + new Date().toLocaleString() + " Request sent.</p><p>" + escapeHTML(req.line['url']) + "</p><p>" + escapeHTML(req.rawBody) + "</p><hr />";
+            // @ts-ignore
+            var submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
+            submit(); // submit request.
+            errorMsg("");
+            return true;
+        }
+        else {
+            errorMsg("The URL is malformed");
+            return false;
+        }
     },
     generateSendFunction: function () {
         var content = "<script>\nfunction csrfSubmit(){\n    let submit = HTMLFormElement.prototype[\"submit\"].bind(document.evilform);\n    submit();\n}\n</script>\n";
