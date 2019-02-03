@@ -25,18 +25,20 @@ var formfunc = {
     },
     send: function (httprequest) {
         var req = httprequest;
-        if (isValidURL(req.line['url'])) {
-            document.getElementById("stat").innerHTML += "<p>" + new Date().toLocaleString() + " Request sent.</p><p>" + escapeHTML(req.line['url']) + "</p><p>" + escapeHTML(req.rawBody) + "</p><hr />";
-            // @ts-ignore
-            var submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
-            submit(); // submit request.
-            errorMsg("");
-            return true;
+        if (form.isTransitionSubmit()) {
+            errorMsg("Cannot submit because \"transition on submit\" is on!");
+            return false;
         }
-        else {
+        if (!isValidURL(req.line['url'])) {
             errorMsg("The URL is malformed");
             return false;
         }
+        document.getElementById("stat").innerHTML += "<p>" + new Date().toLocaleString() + " Request sent.</p><p>" + escapeHTML(req.line['url']) + "</p><p>" + escapeHTML(req.rawBody) + "</p><hr />";
+        // @ts-ignore
+        var submit = HTMLFormElement.prototype["submit"].bind(document.evilform);
+        submit(); // submit request.
+        errorMsg("");
+        return true;
     },
     generateSendFunction: function () {
         var content = "<script>\nfunction csrfSubmit(){\n    let submit = HTMLFormElement.prototype[\"submit\"].bind(document.evilform);\n    submit();\n}\n</script>\n";
