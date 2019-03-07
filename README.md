@@ -5,7 +5,7 @@ Generate CSRF PoC
 
 ## Parameters
 
-- send : send type(Form or XHR)
+- send : sending type(Form or XHR)
 - use fromCharCode : use fromCharCode (XHR only)
 - transition on submit : force Transition on Submit
 - automatic submitting : submit when opening HTML file
