@@ -1,6 +1,6 @@
 # CSRFPoCGenerator
 Generate CSRF PoC
-
+![CSRFPoCGenerator screen](https://raw.githubusercontent.com/takubokudori/CSRFPoCGenerator/master/images/CPGscreen.PNG)
 ---
 
 ## Parameters
